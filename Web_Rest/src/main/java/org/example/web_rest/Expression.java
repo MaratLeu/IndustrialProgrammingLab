@@ -294,18 +294,19 @@ public class Expression {
     }
 
     public static ArrayList<String> evaluate_with_regex(ArrayList<String> expressions) {
+        ArrayList<String> arithmeticExpressions = transform_to_arithmetic(expressions);
         ArrayList<String> results = new ArrayList<>();
-        for (String expression : expressions) {
+        for (String expression : arithmeticExpressions) {
             var result = regex(expression);
             results.add(String.valueOf(result));
         }
         return results;
     }
 
-    // Подсчет с помощью библиотеки
     public static ArrayList<String> evaluate_with_library(ArrayList<String> expressions) {
+        ArrayList<String> arithmeticExpressions = transform_to_arithmetic(expressions);
         ArrayList<String> results = new ArrayList<>();
-        for (String expression : expressions) {
+        for (String expression : arithmeticExpressions) {
             net.objecthunter.exp4j.Expression exp = new ExpressionBuilder(expression).build();
             var result = exp.evaluate();
             results.add(String.valueOf(result));
