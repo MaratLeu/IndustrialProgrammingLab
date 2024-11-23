@@ -7,8 +7,9 @@ import java.util.regex.Pattern;
 
 public class Expression {
     public static ArrayList<String> evaluateLines(ArrayList<String> lines) {
+        ArrayList<String> arithmetic_lines = transform_to_arithmetic(lines);
         ArrayList<String> results = new ArrayList<>();
-        for (String line : lines) {
+        for (String line : arithmetic_lines) {
             List<Lexeme> lexemes = Analyse(line);
             LexemeBuffer lexemeBuffer = new LexemeBuffer(lexemes);
             results.add(String.valueOf(expr(lexemeBuffer)));

@@ -6,8 +6,9 @@ import net.objecthunter.exp4j.ExpressionBuilder;
 
 public class Expression {
     public static ArrayList<String> evaluateLines(ArrayList<String> lines) {
+        ArrayList<String> arithmetic_lines = transform_to_arithmetic(lines);
         ArrayList<String> results = new ArrayList<>();
-        for (String line : lines) {
+        for (String line : arithmetic_lines) {
             List<Expression.Lexeme> lexemes = Analyse(line);
             Expression.LexemeBuffer lexemeBuffer = new Expression.LexemeBuffer(lexemes);
             results.add(String.valueOf(expr(lexemeBuffer)));
