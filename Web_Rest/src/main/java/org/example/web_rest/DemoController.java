@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
@@ -47,8 +48,7 @@ public class DemoController {
     @PostMapping("/archive")
     public String archive(@RequestParam("inputFormat") String inputFormat,
                           @RequestParam("outputFormat") String outputFormat,
-                          @RequestParam("archiveFormat") String archiveFormat)
-    {
+                          @RequestParam("archiveFormat") String archiveFormat) throws IOException, InterruptedException {
         String result;
         if ("zip".equalsIgnoreCase(archiveFormat)) {
             Archive.zip("input." + inputFormat, "archive.zip");
@@ -81,8 +81,7 @@ public class DemoController {
     @PostMapping("/archiveThenEncrypt")
     public String archiveThenEncrypt(@RequestParam("inputFormat") String inputFormat,
                                      @RequestParam("outputFormat") String outputFormat,
-                                     @RequestParam("archiveFormat") String archiveFormat) throws NoSuchAlgorithmException
-    {
+                                     @RequestParam("archiveFormat") String archiveFormat) throws NoSuchAlgorithmException, IOException, InterruptedException {
         String result;
         if ("zip".equalsIgnoreCase(archiveFormat)) {
             Archive.zip("input." + inputFormat, "archive.zip");
@@ -105,7 +104,7 @@ public class DemoController {
     @PostMapping("/encryptThenArchive")
     public String encryptThenArchive(@RequestParam("inputFormat") String inputFormat,
                                      @RequestParam("outputFormat") String outputFormat,
-                                     @RequestParam("archiveFormat") String archiveFormat) throws NoSuchAlgorithmException {
+                                     @RequestParam("archiveFormat") String archiveFormat) throws NoSuchAlgorithmException, IOException, InterruptedException {
         String result;
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(128);
