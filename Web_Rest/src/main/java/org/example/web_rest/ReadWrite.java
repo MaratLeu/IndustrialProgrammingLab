@@ -92,27 +92,18 @@ public class ReadWrite {
         }
     }
 
-    public static void write_html(String filename, ArrayList<String> data, boolean isExpression) {
+    public static void write_html(String filename, ArrayList<String> data) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
-            org.jsoup.nodes.Document doc = Jsoup.parse("<!DOCTYPE html><html><head></head><body></body></html>", filename);
+            org.jsoup.nodes.Document doc = Jsoup.parse("<!DOCTYPE html><html><head></head><body><table></table></body></html>", filename);
             org.jsoup.nodes.Element table = doc.select("table").first();
-            if (table == null) {
-                table = doc.body().appendElement("table");
-            }
 
             for (String item : data) {
                 org.jsoup.nodes.Element row = table.appendElement("tr");
-                if (isExpression) {
-                    row.appendElement("td").text(item);
-                }
-                else {
-                    row.appendElement("td").text(item);
-                }
+                row.appendElement("td").text(item);
             }
 
             writer.write(doc.outerHtml());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             System.out.println("Ошибка записи HTML: " + e.getMessage());
         }
     }

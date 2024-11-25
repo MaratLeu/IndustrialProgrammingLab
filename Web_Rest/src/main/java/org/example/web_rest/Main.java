@@ -83,12 +83,12 @@ public class Main {
             ArrayList<String> results_yaml = Expression.evaluateLines(arithmetic_yaml);
             ReadWrite.write_yaml("output.yaml", results_yaml, false);
 
-            ReadWrite.write_html("input.html", expressions_input, true);
+            ReadWrite.write_html("input.html", expressions_input);
             ArrayList<String> expressions_html = ReadWrite.read_html("input.html", true);
             assert expressions_html != null;
             ArrayList<String> arithmetic_html = Expression.transform_to_arithmetic(expressions_html);
             ArrayList<String> results_html = Expression.evaluateLines(arithmetic_html);
-            ReadWrite.write_html("output.html", results_html, false);
+            ReadWrite.write_html("output.html", results_html);
 
             ReadWrite.write_proto("input.proto", expressions_input, true);
             ArrayList<String> expressions_protobuf = ReadWrite.read_proto("input.proto", true);
