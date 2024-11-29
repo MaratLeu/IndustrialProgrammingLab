@@ -88,11 +88,11 @@ public class Main {
             ArrayList<String> results_html = Expression.evaluateLines(arithmetic_html);
             ReadWrite.write_html("output.html", results_html, false);
 
-            ReadWrite.write_proto("input.proto", expressions_input, true);
-            ArrayList<String> expressions_protobuf = ReadWrite.read_proto("input.proto", true);
+            ReadWrite.write_proto("input.bin", expressions_input, true);
+            ArrayList<String> expressions_protobuf = ReadWrite.read_proto("input.bin", true);
             ArrayList<String> arithmetic_protobuf = Expression.transform_to_arithmetic(expressions_protobuf);
             ArrayList<String> results_protobuf = Expression.evaluateLines(arithmetic_protobuf);
-            ReadWrite.write_proto("output.proto", results_protobuf, false);
+            ReadWrite.write_proto("output.bin", results_protobuf, false);
         }
         catch (Exception e) {
             System.out.println(e.getMessage());

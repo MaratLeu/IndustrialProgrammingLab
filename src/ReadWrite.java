@@ -6,6 +6,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -25,37 +26,46 @@ import org.yaml.snakeyaml.constructor.Constructor;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.example.protobuf.Parse.MyMessage;
-
 public class ReadWrite {
     // Чтение и запись protobuf
     public static ArrayList<String> read_proto(String protobuf_file, boolean isExpression) throws IOException {
         ArrayList<String> data = new ArrayList<>();
         try (FileInputStream inputStream = new FileInputStream(protobuf_file)) {
-            while (inputStream.available() > 0) {
-                MyMessage message = MyMessage.parseDelimitedFrom(inputStream);
-                String content = isExpression ? message.getExpression() : message.getResult();
-                data.add(content);
+            if (isExpression) {
+                Input.InputProto message;
+                while ((message = Input.InputProto.parseDelimitedFrom(inputStream)) != null) {
+                    data.addAll(message.getExpressionsList());
+                }
+            } else {
+                Output.OutputProto message;
+                while ((message = Output.OutputProto.parseDelimitedFrom(inputStream)) != null) {
+                    data.addAll(message.getResultsList());
+                }
             }
         }
-        catch (Exception e) {
-            System.out.println("Ошибка чтения Protobuf: " + e.getMessage());
+        catch (InvalidProtocolBufferException e) {
+            throw new IOException("Ошибка парсинга Protobuf: " + e.getMessage(), e);
+        }
+        catch (IOException e) {
+            throw new IOException("Ошибка чтения Protobuf: " + e.getMessage(), e);
         }
         return data;
     }
 
+
     public static void write_proto(String filename, ArrayList<String> data, boolean isExpression) throws InvalidProtocolBufferException {
         try (FileOutputStream outputStream = new FileOutputStream(filename)) {
-            for (String item : data) {
-                MyMessage.Builder builder = MyMessage.newBuilder();
-                if (isExpression) {
-                    builder.setExpression(item);
-                } else {
-                    builder.setResult(item);
-                }
-                MyMessage message = builder.build();
-                message.writeDelimitedTo(outputStream);
+            if (isExpression) {
+                Input.InputProto.Builder inputProtoBuilder = Input.InputProto.newBuilder();
+                inputProtoBuilder.addAllExpressions(data);
+                Input.InputProto inputProto = inputProtoBuilder.build();
+                inputProto.writeDelimitedTo(outputStream);
+            }
+            else {
+                Output.OutputProto.Builder outputProtoBuilder = Output.OutputProto.newBuilder();
+                outputProtoBuilder.addAllResults(data);
+                Output.OutputProto outputProto = outputProtoBuilder.build();
+                outputProto.writeDelimitedTo(outputStream);
             }
         }
         catch (Exception e) {
