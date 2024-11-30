@@ -28,7 +28,7 @@ import org.jsoup.select.Elements;
 
 public class ReadWrite {
     // Чтение и запись protobuf
-    public static ArrayList<String> read_proto(String protobuf_file, boolean isExpression) throws IOException {
+    public static ArrayList<String> read_bin(String protobuf_file, boolean isExpression) throws IOException {
         ArrayList<String> data = new ArrayList<>();
         try (FileInputStream inputStream = new FileInputStream(protobuf_file)) {
             if (isExpression) {
@@ -53,7 +53,7 @@ public class ReadWrite {
     }
 
 
-    public static void write_proto(String filename, ArrayList<String> data, boolean isExpression) throws InvalidProtocolBufferException {
+    public static void write_bin(String filename, ArrayList<String> data, boolean isExpression) throws InvalidProtocolBufferException {
         try (FileOutputStream outputStream = new FileOutputStream(filename)) {
             if (isExpression) {
                 Input.InputProto.Builder inputProtoBuilder = Input.InputProto.newBuilder();

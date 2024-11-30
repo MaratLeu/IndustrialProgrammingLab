@@ -45,20 +45,18 @@ public class Main {
             ArrayList<String> results_library = Expression.evaluate_with_library(arithmetic_expressions);
             ReadWrite.write_txt("output_3.txt", results_library, false);
 
-            // Архивировать и разархивировать в zip
-            Archive.zip("input.txt", "archive.zip");
-            Archive.unzip("archive.zip", "zip");
-
-            // Архивировать и разархивировать в rar
-            Archive.rar("input.txt", "archive.rar");
-            Archive.unrar("archive.rar", "rar");
+            ArrayList<String> filenames = new ArrayList<>();
+            filenames.add("input.txt");
+            filenames.add("output.txt");
 
             // Шифрование расшифрование
             KeyGenerator keyGen = KeyGenerator.getInstance("AES");
             keyGen.init(128);
             SecretKey key = keyGen.generateKey();
-            byte[] encrypted = Encryption.encrypt("input.txt", "encrypt.txt", key);
+            byte[] encrypted = Encryption.encrypt("input.txt", "encrypt.aes", key);
             Encryption.decrypt("decrypt.txt", encrypted, key);
+            filenames.add("encrypt.aes");
+            filenames.add("decrypt.txt");
 
             // Чтение и запись XML-файл, JSON-файл, YAML-файл, HTML-файл, Protobuf-файл
             ReadWrite.write_xml("input.xml", expressions_input, true);
@@ -66,6 +64,8 @@ public class Main {
             ArrayList<String> arithmetic_xml = Expression.transform_to_arithmetic(expresions_xml);
             ArrayList<String> results_xml = Expression.evaluateLines(arithmetic_xml);
             ReadWrite.write_xml("output.xml", results_xml, false);
+            filenames.add("input.xml");
+            filenames.add("output.xml");
 
             ReadWrite.write_json("input.json", expressions_input, true);
             ArrayList<String> expressions_json = ReadWrite.read_json("input.json", true);
@@ -73,6 +73,8 @@ public class Main {
             ArrayList<String> arithmetic_json = Expression.transform_to_arithmetic(expressions_json);
             ArrayList<String> results_json = Expression.evaluateLines(arithmetic_json);
             ReadWrite.write_json("output.json", results_json, false);
+            filenames.add("input.json");
+            filenames.add("output.json");
 
             ReadWrite.write_yaml("input.yaml", expressions_input, true);
             ArrayList<String> expressions_yaml = ReadWrite.read_yaml("input.yaml", true);
@@ -80,6 +82,8 @@ public class Main {
             ArrayList<String> arithmetic_yaml = Expression.transform_to_arithmetic(expressions_yaml);
             ArrayList<String> results_yaml = Expression.evaluateLines(arithmetic_yaml);
             ReadWrite.write_yaml("output.yaml", results_yaml, false);
+            filenames.add("input.yaml");
+            filenames.add("output.yaml");
 
             ReadWrite.write_html("input.html", expressions_input, true);
             ArrayList<String> expressions_html = ReadWrite.read_html("input.html", true);
@@ -87,12 +91,24 @@ public class Main {
             ArrayList<String> arithmetic_html = Expression.transform_to_arithmetic(expressions_html);
             ArrayList<String> results_html = Expression.evaluateLines(arithmetic_html);
             ReadWrite.write_html("output.html", results_html, false);
+            filenames.add("input.html");
+            filenames.add("output.html");
 
-            ReadWrite.write_proto("input.bin", expressions_input, true);
-            ArrayList<String> expressions_protobuf = ReadWrite.read_proto("input.bin", true);
+            ReadWrite.write_bin("input.bin", expressions_input, true);
+            ArrayList<String> expressions_protobuf = ReadWrite.read_bin("input.bin", true);
             ArrayList<String> arithmetic_protobuf = Expression.transform_to_arithmetic(expressions_protobuf);
             ArrayList<String> results_protobuf = Expression.evaluateLines(arithmetic_protobuf);
-            ReadWrite.write_proto("output.bin", results_protobuf, false);
+            ReadWrite.write_bin("output.bin", results_protobuf, false);
+            filenames.add("input.bin");
+            filenames.add("output.bin");
+
+            // Архивировать и разархивировать в zip
+            Archive.zip(filenames, "archive.zip");
+            Archive.unzip("archive.zip", "zip");
+
+            // Архивировать и разархивировать в rar
+            Archive.rar(filenames, "archive.rar");
+            Archive.unrar("archive.rar", "rar");
         }
         catch (Exception e) {
             System.out.println(e.getMessage());

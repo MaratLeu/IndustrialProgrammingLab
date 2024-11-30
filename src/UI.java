@@ -49,7 +49,7 @@ public class UI {
         });
 
         JPanel formatPanel = new JPanel(new FlowLayout());
-        String[] formats = {"TXT", "JSON", "XML", "YAML", "HTML", "PROTO"};
+        String[] formats = {"TXT", "JSON", "XML", "YAML", "HTML", "BIN"};
         JComboBox<String> inputFormat = new JComboBox<>(formats);
         JComboBox<String> outputFormat = new JComboBox<>(formats);
         formatPanel.add(new JLabel("Input format:"));
@@ -145,9 +145,11 @@ public class UI {
                         ? outputFormat.getSelectedItem().toString().toLowerCase()
                         : "txt";
                 try {
-                    Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, String.class, String.class);
-                    method.invoke(null, "input." + selectedInputFormat, "archive." + selectedArchiveFormat);
-                    method.invoke(null, "output." + selectedOutputFormat, "archive." + selectedArchiveFormat);
+                    ArrayList<String> filenames = new ArrayList<>();
+                    filenames.add("input." + selectedInputFormat);
+                    filenames.add("output." + selectedOutputFormat);
+                    Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                    method.invoke(null, filenames, "archive." + selectedArchiveFormat);
                 }
                 catch (Exception ex) {
                     System.out.println(ex.getMessage());
@@ -215,9 +217,11 @@ public class UI {
                     ? outputFormat.getSelectedItem().toString().toLowerCase()
                     : "txt";
             try {
-                Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, String.class, String.class);
-                method.invoke(null, "input." + selectedInputFormat, "archive." + selectedArchiveFormat);
-                method.invoke(null, "output." + selectedOutputFormat, "archive." + selectedArchiveFormat);
+                ArrayList<String> filenames = new ArrayList<>();
+                filenames.add("input." + selectedInputFormat);
+                filenames.add("output." + selectedOutputFormat);
+                Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                method.invoke(null, filenames, "archive." + selectedArchiveFormat);
 
                 KeyGenerator keyGen = KeyGenerator.getInstance("AES");
                 keyGen.init(128);
@@ -248,9 +252,13 @@ public class UI {
                 Encryption.encrypt("input." + selectedInputFormat, "input_encrypt." + selectedInputFormat, key);
                 Encryption.encrypt(selectedOutputFormat, "output_encrypt." + selectedOutputFormat, key);
 
-                Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, String.class, String.class);
-                method.invoke(null, "input_encrypt." + selectedInputFormat, "archive." + selectedArchiveFormat);
-                method.invoke(null, "output_encrypt." + selectedOutputFormat, "archive." + selectedArchiveFormat);
+                ArrayList<String> filenames = new ArrayList<>();
+                filenames.add("input." + selectedInputFormat);
+                filenames.add("output." + selectedOutputFormat);
+                filenames.add("input_encrypt." + selectedInputFormat);
+                filenames.add("output_encrypt." + selectedOutputFormat);
+                Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                method.invoke(null, filenames, "archive." + selectedArchiveFormat);
             }
             catch (Exception ex) {
                 System.out.println(ex.getMessage());
