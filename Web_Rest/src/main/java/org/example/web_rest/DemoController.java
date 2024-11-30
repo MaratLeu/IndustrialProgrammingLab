@@ -5,7 +5,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
@@ -48,19 +49,14 @@ public class DemoController {
     @PostMapping("/archive")
     public String archive(@RequestParam("inputFormat") String inputFormat,
                           @RequestParam("outputFormat") String outputFormat,
-                          @RequestParam("archiveFormat") String archiveFormat) throws IOException, InterruptedException {
+                          @RequestParam("archiveFormat") String archiveFormat) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String result;
-        if ("zip".equalsIgnoreCase(archiveFormat)) {
-            Archive.zip("input." + inputFormat, "archive.zip");
-            Archive.zip("output." + outputFormat, "archive.zip");
-            result = "Файлы успешно заархивированы в формат zip.";
-        } else if ("rar".equalsIgnoreCase(archiveFormat)) {
-            Archive.rar("input." + inputFormat, "archive.rar");
-            Archive.rar("output." + outputFormat, "archive.rar");
-            result = "Файлы успешно заархивированы в формат rar.";
-        } else {
-            result = "Неверный формат архива.";
-        }
+        ArrayList<String> filenames = new ArrayList<>();
+        filenames.add("input." + inputFormat);
+        filenames.add("output." + outputFormat);
+        Method method = Archive.class.getDeclaredMethod(archiveFormat, ArrayList.class, String.class);
+        method.invoke(null, filenames, "archive." + archiveFormat);
+        result = "Файлы успешно заархивированы";
         return result;
     }
 
@@ -81,18 +77,14 @@ public class DemoController {
     @PostMapping("/archiveThenEncrypt")
     public String archiveThenEncrypt(@RequestParam("inputFormat") String inputFormat,
                                      @RequestParam("outputFormat") String outputFormat,
-                                     @RequestParam("archiveFormat") String archiveFormat) throws NoSuchAlgorithmException, IOException, InterruptedException {
+                                     @RequestParam("archiveFormat") String archiveFormat) throws NoSuchAlgorithmException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String result;
-        if ("zip".equalsIgnoreCase(archiveFormat)) {
-            Archive.zip("input." + inputFormat, "archive.zip");
-            Archive.zip("output." + outputFormat, "archive.zip");
-        } else if ("rar".equalsIgnoreCase(archiveFormat)) {
-            Archive.rar("input." + inputFormat, "archive.rar");
-            Archive.rar("output." + outputFormat, "archive.rar");
-        } else {
-            result = "Неверный формат архива.";
-            return result;
-        }
+        ArrayList<String> filenames = new ArrayList<>();
+        filenames.add("input." + inputFormat);
+        filenames.add("output." + outputFormat);
+        Method method = Archive.class.getDeclaredMethod(archiveFormat, ArrayList.class, String.class);
+        method.invoke(null, filenames, "archive." + archiveFormat);
+
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(128);
         SecretKey secretKey = keyGenerator.generateKey();
@@ -104,23 +96,19 @@ public class DemoController {
     @PostMapping("/encryptThenArchive")
     public String encryptThenArchive(@RequestParam("inputFormat") String inputFormat,
                                      @RequestParam("outputFormat") String outputFormat,
-                                     @RequestParam("archiveFormat") String archiveFormat) throws NoSuchAlgorithmException, IOException, InterruptedException {
+                                     @RequestParam("archiveFormat") String archiveFormat) throws NoSuchAlgorithmException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String result;
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(128);
         SecretKey secretKey = keyGenerator.generateKey();
         Encryption.encrypt("input." + inputFormat, "encryptedInput." + "aes", secretKey);
-        Encryption.encrypt("output." + inputFormat, "encryptedOutput." + "aes", secretKey);
-        if ("zip".equalsIgnoreCase(archiveFormat)) {
-            Archive.zip("encryptedInput.aes", "archive.zip");
-            Archive.zip("encryptedOutput.aes" + outputFormat, "archive.zip");
-        } else if ("rar".equalsIgnoreCase(archiveFormat)) {
-            Archive.rar("encryptedInput.aes", "archive.rar");
-            Archive.rar("encryptedOutput.aes", "archive.rar");
-        } else {
-            result = "Неверный формат архива.";
-            return result;
-        }
+        Encryption.encrypt("output." + outputFormat, "encryptedOutput." + "aes", secretKey);
+
+        ArrayList<String> filenames = new ArrayList<>();
+        filenames.add("encryptedInput.aes");
+        filenames.add("encryptedOutput.aes");
+        Method method = Archive.class.getDeclaredMethod(archiveFormat, ArrayList.class, String.class);
+        method.invoke(null, filenames, "archive." + archiveFormat);
         result = "Файлы успешно зашифрованы/заархивированы";
         return result;
     }

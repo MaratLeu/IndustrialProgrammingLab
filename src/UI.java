@@ -253,8 +253,6 @@ public class UI {
                 Encryption.encrypt(selectedOutputFormat, "output_encrypt." + selectedOutputFormat, key);
 
                 ArrayList<String> filenames = new ArrayList<>();
-                filenames.add("input." + selectedInputFormat);
-                filenames.add("output." + selectedOutputFormat);
                 filenames.add("input_encrypt." + selectedInputFormat);
                 filenames.add("output_encrypt." + selectedOutputFormat);
                 Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
