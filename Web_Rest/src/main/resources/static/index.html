@@ -119,11 +119,12 @@
   <textarea id="inputTextArea" placeholder="Enter expressions"></textarea>
   <textarea id="outputTextArea" placeholder="Results for expressions" readonly></textarea>
 
+  <button type="button" onclick="calculate()">Calculate</button>
   <button type="button" onclick="archive()">Archive</button>
   <button type="button" onclick="encrypt()">Encrypt</button>
   <button type="button" onclick="archiveThenEncrypt()">Archive then Encrypt</button>
   <button type="button" onclick="encryptThenArchive()">Encrypt then Archive</button>
-  <button type="button" onclick="writeToFIle()">Write to File</button>
+  <button type="button" onclick="writeToFile()">Write to File</button>
   <button type="button" onclick="readFromFile()">Read from File</button>
 
   <div id="resultsArea">
@@ -132,6 +133,41 @@
 </div>
 
 <script>
+  function calculate() {
+    var expressions = document.getElementById("inputTextArea").value.trim(); // Удаляем пробелы
+    if (!expressions) { // Проверка на пустоту
+      alert("Please enter expressions to calculate.");
+      return;
+    }
+
+    var payload = JSON.stringify({ expressions: expressions.split('\n') });
+
+    // Создаем и отправляем AJAX запрос на сервер
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/calculate_expressions");
+    xhr.setRequestHeader("Content-Type", "application/json"); // Устанавливаем заголовок
+
+    xhr.onload = function() {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // Парсим ответ JSON
+        var results = JSON.parse(xhr.responseText);
+        // Объединяем результаты в строку и записываем в outputTextArea
+        document.getElementById("outputTextArea").value = results.join('\n');
+        document.getElementById("resultsArea").innerHTML = results.join('<br>');
+      } else {
+        document.getElementById("resultsArea").innerHTML = "Error calculating expressions: " + xhr.statusText; // Более информативная ошибка
+        document.getElementById("outputTextArea").value = ""; // Очищаем outputTextArea при ошибке
+      }
+    };
+
+    xhr.onerror = function() {
+      document.getElementById("resultsArea").innerHTML = "Network error";
+      document.getElementById("outputTextArea").value = ""; // Очищаем outputTextArea при ошибке
+    };
+
+    xhr.send(payload);
+  }
+
   function archive() {
     // Получаем  выбранные  форматы  с  помощью  JavaScript
     var selectedInputFormat = document.getElementById("inputFormat").value;
@@ -222,7 +258,7 @@
     xhr.send(data);
   }
 
-  function writeToFIle() {
+  function writeToFile() {
     // Получаем  выбранные  форматы  с  помощью  JavaScript
     var selectedInputFormat = document.getElementById("inputFormat").value;
     var selectedOutputFormat = document.getElementById("outputFormat").value;

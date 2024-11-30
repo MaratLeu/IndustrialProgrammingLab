@@ -1,6 +1,8 @@
 package org.example.web_rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.KeyGenerator;
@@ -9,6 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 @RestController
 public class DemoController {
@@ -41,9 +44,19 @@ public class DemoController {
     }
 
     @PostMapping("/calculate_expressions")
-    public ArrayList<String> calculateExpressions(@RequestBody ExpressionRequest request) {
-        ArrayList<String> arithmeticExpressions = Expression.transform_to_arithmetic(request.getExpressions());
-        return Expression.evaluateLines(arithmeticExpressions);
+    public ResponseEntity<ArrayList<String>> calculateExpressions(@RequestBody ExpressionRequest request) {
+        if (request == null || request.getExpressions() == null || request.getExpressions().isEmpty()) {
+            return ResponseEntity.badRequest().body(new ArrayList<>(Collections.singletonList("Input expressions cannot be null or empty")));
+        }
+
+        try {
+            ArrayList<String> arithmeticExpressions = Expression.transform_to_arithmetic(request.getExpressions());
+            ArrayList<String> results = Expression.evaluateLines(arithmeticExpressions);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            System.err.println("Error processing expressions: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>(Collections.singletonList("Error processing expressions: " + e.getMessage())));
+        }
     }
 
     @PostMapping("/archive")
