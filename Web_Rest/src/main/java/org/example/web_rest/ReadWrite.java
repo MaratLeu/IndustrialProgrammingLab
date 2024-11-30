@@ -57,7 +57,7 @@ public class ReadWrite {
     }
 
 
-    public static void write_bin(String filename, ArrayList<String> data, boolean isExpression) throws InvalidProtocolBufferException {
+    public static void write_bin(String filename, ArrayList<String> data, boolean isExpression) {
         try (FileOutputStream outputStream = new FileOutputStream(filename)) {
             if (isExpression) {
                 Input.InputProto.Builder inputProtoBuilder = Input.InputProto.newBuilder();
