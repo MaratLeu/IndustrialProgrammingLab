@@ -259,45 +259,66 @@
   }
 
   function writeToFile() {
-    // Получаем  выбранные  форматы  с  помощью  JavaScript
-    var selectedInputFormat = document.getElementById("inputFormat").value;
-    var selectedOutputFormat = document.getElementById("outputFormat").value;
+    // Получаем выбранные форматы с помощью JavaScript
+    const selectedInputFormat = document.getElementById("inputFormat").value;
+    const selectedOutputFormat = document.getElementById("outputFormat").value;
 
-    // Выполняем  AJAX-запрос  на  сервер
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/writeToFIle"); // Заменяем  на  правильный  URL  на  вашем  сервере
-    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    const expressions = document.getElementById("inputTextArea").value.trim(); // Удаляем пробелы
+    if (!expressions) { // Проверка на пустоту
+      alert("Please enter expressions to calculate.");
+      return;
+    }
+
+    const results = document.getElementById("outputTextArea").value.trim();
+    if (!results) {
+      alert("Please calculate expressions to write to the output file.");
+      return;
+    }
+
+    var payload = JSON.stringify({inputFormat: selectedInputFormat, outputFormat: selectedOutputFormat,
+      expressions: expressions.split('\n'), results: results.split("\n")});
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/writeToFile");
+    xhr.setRequestHeader("Content-Type", "application/json");
+
     xhr.onload = function() {
       if (xhr.status >= 200 && xhr.status < 300) {
         document.getElementById("resultsArea").innerHTML = xhr.responseText;
       } else {
+        console.error("Error writing to file:", xhr.statusText);
         document.getElementById("resultsArea").innerHTML = "Error writing to file.";
       }
     };
-    var data = "inputFormat=" + encodeURIComponent(selectedInputFormat) +
-            "&outputFormat=" + encodeURIComponent(selectedOutputFormat);
-    xhr.send(data);
+
+    xhr.send(payload);
   }
 
   function readFromFile() {
-    // Получаем  выбранные  форматы  с  помощью  JavaScript
-    var selectedInputFormat = document.getElementById("inputFormat").value;
-    var selectedOutputFormat = document.getElementById("outputFormat").value;
+    const selectedInputFormat = document.getElementById("inputFormat").value;
+    const selectedOutputFormat = document.getElementById("outputFormat").value;
 
-    // Выполняем  AJAX-запрос  на  сервер
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/readFromFile"); // Заменяем  на  правильный  URL  на  вашем  сервере
-    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    const payload = JSON.stringify({
+      inputFormat: selectedInputFormat,
+      outputFormat: selectedOutputFormat
+    });
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/readFromFile");
+    xhr.setRequestHeader("Content-Type", "application/json");
+
     xhr.onload = function() {
       if (xhr.status >= 200 && xhr.status < 300) {
-        document.getElementById("resultsArea").innerHTML = xhr.responseText;
+        const response = JSON.parse(xhr.responseText);
+        document.getElementById("inputTextArea").value = response.expressions.join('\n');
+        document.getElementById("outputTextArea").value = response.results.join('\n');
+        document.getElementById("resultsArea").innerHTML = response.results.join('<br>');
       } else {
         document.getElementById("resultsArea").innerHTML = "Error reading from file.";
       }
     };
-    var data = "inputFormat=" + encodeURIComponent(selectedInputFormat) +
-            "&outputFormat=" + encodeURIComponent(selectedOutputFormat);
-    xhr.send(data);
+
+    xhr.send(payload);
   }
 </script>
 

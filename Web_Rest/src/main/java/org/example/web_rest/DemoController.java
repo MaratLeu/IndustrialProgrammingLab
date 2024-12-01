@@ -126,15 +126,88 @@ public class DemoController {
         return result;
     }
 
+    @PostMapping("/writeToFile")
+    public String writeToFile(@RequestBody ExpressionRequest request) {
+        String result;
+        try {
+            ArrayList<String> expressions = request.getExpressions();
+            Method method = ReadWrite.class.getDeclaredMethod("write_" + request.getInputFormat(), String.class, ArrayList.class, boolean.class);
+            method.invoke(null, "input." + request.getInputFormat(), expressions, true);
+
+            ArrayList<String> results = request.getResults();
+            Method method1 = ReadWrite.class.getDeclaredMethod("write_" + request.getOutputFormat(), String.class, ArrayList.class, boolean.class);
+            method1.invoke(null, "output." + request.getOutputFormat(), results, false);
+
+            result = "Выражения и результаты успешно записаны в файлы";
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            System.err.println("Error processing expressions: " + e.getMessage());
+            result = "Ошибка записи в файл: " + e.getMessage();
+        }
+        return result;
+    }
+
+    @PostMapping("/readFromFile")
+    public ResponseEntity<ExpressionRequest> readFromFile(@RequestParam("inputFormat") String inputFormat,
+                               @RequestParam("outputFormat") String outputFormat) {
+        try {
+            Method method = ReadWrite.class.getDeclaredMethod("read_" + inputFormat, String.class, boolean.class);
+            ArrayList<String> expressions = (ArrayList<String>) method.invoke(null, "input." + inputFormat, true);
+
+            Method method1 = ReadWrite.class.getDeclaredMethod("read_" + outputFormat, String.class, boolean.class);
+            ArrayList<String> results = (ArrayList<String>) method1.invoke(null, "output." + outputFormat, false);
+
+            ExpressionRequest request = new ExpressionRequest();
+            request.setExpressions(expressions);
+            request.setResults(results);
+            return ResponseEntity.ok(request);
+        }
+        catch (Exception e) {
+            System.err.println("Error reading file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+
     public static class ExpressionRequest {
+        private String inputFormat;
+        private String outputFormat;
+        private String archiveFormat;
         private ArrayList<String> expressions;
+        private ArrayList<String> results;
+
+        public String getInputFormat() {
+            return inputFormat;
+        }
+        public void setInputFormat(String inputFormat) {
+            this.inputFormat = inputFormat;
+        }
+
+        public String getOutputFormat() {
+            return outputFormat;
+        }
+        public void setOutputFormat(String outputFormat) {
+            this.outputFormat = outputFormat;
+        }
+
+        public String getArchiveFormat() {
+            return archiveFormat;
+        }
+        public void setArchiveFormat(String archiveFormat) {
+            this.archiveFormat = archiveFormat;
+        }
 
         public ArrayList<String> getExpressions() {
             return expressions;
         }
-
         public void setExpressions(ArrayList<String> expressions) {
             this.expressions = expressions;
+        }
+
+        public ArrayList<String> getResults() {
+            return results;
+        }
+        public void setResults(ArrayList<String> results) {
+            this.results = results;
         }
     }
 }
