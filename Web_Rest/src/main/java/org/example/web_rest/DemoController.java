@@ -147,16 +147,17 @@ public class DemoController {
     }
 
     @PostMapping("/readFromFile")
-    public ResponseEntity<ExpressionRequest> readFromFile(@RequestParam("inputFormat") String inputFormat,
-                               @RequestParam("outputFormat") String outputFormat) {
+    public ResponseEntity<ExpressionRequest> readFromFile(@RequestBody ExpressionRequest request) {
         try {
+            String inputFormat = request.getInputFormat();
+            String outputFormat = request.getOutputFormat();
+
             Method method = ReadWrite.class.getDeclaredMethod("read_" + inputFormat, String.class, boolean.class);
             ArrayList<String> expressions = (ArrayList<String>) method.invoke(null, "input." + inputFormat, true);
 
             Method method1 = ReadWrite.class.getDeclaredMethod("read_" + outputFormat, String.class, boolean.class);
             ArrayList<String> results = (ArrayList<String>) method1.invoke(null, "output." + outputFormat, false);
 
-            ExpressionRequest request = new ExpressionRequest();
             request.setExpressions(expressions);
             request.setResults(results);
             return ResponseEntity.ok(request);
@@ -165,6 +166,7 @@ public class DemoController {
             System.err.println("Error reading file: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+
     }
 
 
