@@ -21,22 +21,33 @@ public class UI {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
         frame.setLocationRelativeTo(null);
+        frame.getContentPane().setBackground(new Color(255, 255, 255));
         frame.setLayout(new BorderLayout());
 
         JLabel expressionsLabel = new JLabel("Enter expressions:");
         expressionsLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        expressionsLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        expressionsLabel.setForeground(new Color(0, 102, 104));
 
-        JTextArea expressions = new JTextArea(5, 30); // 5 строк, 30 колонок
+        JTextArea expressions = new JTextArea(5, 30);
+        expressions.setLineWrap(true);
+        expressions.setWrapStyleWord(true);
         JScrollPane expressionsScroll = new JScrollPane(expressions);
 
         JLabel resultsLabel = new JLabel("Results for expressions:");
         resultsLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        resultsLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        resultsLabel.setForeground(new Color(34, 139, 134));
 
-        JTextArea results = new JTextArea(10, 30); // 10 строк, 30 колонок
+        JTextArea results = new JTextArea(10, 30);
         results.setEditable(false);
+        results.setLineWrap(true);
+        results.setWrapStyleWord(true);
         JScrollPane resultsScroll = new JScrollPane(results);
 
         JButton calculate = new JButton("Calculate");
+        calculate.setForeground(Color.DARK_GRAY);
+        calculate.setFont(new Font("Arial", Font.BOLD, 14));
         calculate.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 results.setText("");
@@ -58,8 +69,12 @@ public class UI {
         formatPanel.add(inputFormat);
         formatPanel.add(new JLabel("Output format:"));
         formatPanel.add(outputFormat);
+        formatPanel.setBackground(new Color(173, 216, 230));
 
         JButton writeButton = new JButton("Write to file");
+        writeButton.setBackground(new Color(144, 238, 144));
+        writeButton.setForeground(Color.BLACK);
+        writeButton.setFont(new Font("Arial", Font.BOLD, 12));
         writeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String selectedInputFormat = (inputFormat.getSelectedItem() != null)
@@ -94,6 +109,9 @@ public class UI {
             }});
 
         JButton readButton = new JButton("Read from file");
+        readButton.setBackground(new Color(144, 238, 144)); // Lighter green
+        readButton.setForeground(Color.DARK_GRAY);
+        readButton.setFont(new Font("Arial", Font.BOLD, 12));
         readButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String selectedInputFormat = (inputFormat.getSelectedItem() != null)
@@ -127,12 +145,15 @@ public class UI {
         });
 
         JPanel archivePanel = new JPanel(new FlowLayout());
+        archivePanel.setBackground(new Color(255, 228, 196));
         String[] archiveFormats = {"ZIP", "RAR"};
         JComboBox<String> archiveFormat = new JComboBox<>(archiveFormats);
         archivePanel.add(new JLabel("Archive format:"));
         archivePanel.add(archiveFormat);
 
         JButton archiveButton = new JButton("Archive");
+        archiveButton.setFont(new Font("Arial", Font.BOLD, 14));
+        archiveButton.setForeground(new Color(140, 80, 250));
         archiveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Логика архивирования
@@ -162,14 +183,23 @@ public class UI {
         // Создаем панель для кнопок действий с использованием BoxLayout
         JPanel actionPanel = new JPanel();
         actionPanel.setLayout(new BoxLayout(actionPanel, BoxLayout.Y_AXIS));
+        actionPanel.setBackground(new Color(100, 180, 190));
 
         JButton encryptButton = new JButton("Encrypt");
+        encryptButton.setFont(new Font("Arial", Font.BOLD, 14));
+        encryptButton.setForeground(new Color(140, 80, 250));
         JButton archiveThenEncryptButton = new JButton("Archive then Encrypt");
+        archiveThenEncryptButton.setFont(new Font("Arial", Font.BOLD, 14));
+        archiveThenEncryptButton.setForeground(new Color(140, 80, 250));
         JButton encryptThenArchiveButton = new JButton("Encrypt then Archive");
+        encryptThenArchiveButton.setFont(new Font("Arial", Font.BOLD, 14));
+        encryptThenArchiveButton.setForeground(new Color(140, 80, 250));
         JButton doNothingButton = new JButton("Do Nothing");
+        doNothingButton.setFont(new Font("Arial", Font.BOLD, 14));
+        doNothingButton.setForeground(new Color(140, 80, 250));
 
         // Установка одинакового размера для всех кнопок
-        Dimension buttonSize = new Dimension(150, 95);
+        Dimension buttonSize = new Dimension(200, 95);
         encryptButton.setMaximumSize(buttonSize);
         archiveThenEncryptButton.setMaximumSize(buttonSize);
         encryptThenArchiveButton.setMaximumSize(buttonSize);
@@ -271,6 +301,7 @@ public class UI {
         // Создаем главную панель для размещения всех элементов
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBackground(new Color(120, 240, 240));
 
         mainPanel.add(expressionsLabel, BorderLayout.NORTH);
         mainPanel.add(expressionsScroll, BorderLayout.CENTER);
@@ -279,6 +310,7 @@ public class UI {
         JPanel resultsPanel = new JPanel(new BorderLayout());
         resultsPanel.add(resultsLabel, BorderLayout.NORTH);
         resultsPanel.add(resultsScroll, BorderLayout.CENTER);
+        resultsPanel.setBackground(new Color(120, 240, 150));
 
         mainPanel.add(resultsPanel, BorderLayout.SOUTH);
 
@@ -291,9 +323,11 @@ public class UI {
         // Создаем JPanel для каждой кнопки
         JPanel writePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         writePanel.add(writeButton);
+        writePanel.setBackground(new Color(240, 255, 240));
 
         JPanel readPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         readPanel.add(readButton);
+        readPanel.setBackground(new Color(173, 216, 230));
 
         // Добавляем панели в bottomPanel
         bottomPanel.add(writePanel);
@@ -303,6 +337,7 @@ public class UI {
 
         JPanel actionBottomPanel = new JPanel();
         actionBottomPanel.setLayout(new BoxLayout(actionBottomPanel, BoxLayout.Y_AXIS));
+        actionBottomPanel.setBackground(new Color(100, 180, 190));
         actionBottomPanel.add(archiveButton);
         actionBottomPanel.add(actionPanel);
 
