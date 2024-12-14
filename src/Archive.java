@@ -31,7 +31,6 @@ public class Archive {
         }
     }
 
-
     public static void unzip(String zipArchiveName, String outputDirectory) throws IOException {
         Path outputDirPath = Paths.get(outputDirectory);
         Files.createDirectories(outputDirPath); //create directories if they do not exist
@@ -62,9 +61,6 @@ public class Archive {
         }
     }
 
-
-
-
     public static void rar (ArrayList<String> filenames, String rar_archive_name) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
         command.add("rar");
@@ -89,7 +85,6 @@ public class Archive {
         }
 
     }
-
 
     public static void unrar(String rar_archive_name, String outputDirectory) {
         try {

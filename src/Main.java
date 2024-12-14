@@ -54,7 +54,7 @@ public class Main {
             keyGen.init(128);
             SecretKey key = keyGen.generateKey();
             byte[] encrypted = Encryption.encrypt("input.txt", "encrypt.aes", key);
-            Encryption.decrypt("decrypt.txt", encrypted, key);
+            //Encryption.decrypt("decrypt.txt", encrypted, key);
             filenames.add("encrypt.aes");
             filenames.add("decrypt.txt");
 

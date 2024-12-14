@@ -1,49 +1,192 @@
-import org.xml.sax.SAXException;
-
-import javax.crypto.KeyGenerator;
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.swing.*;
-import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
+import java.io.File;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class UI {
-    public static void main(String[] args) throws ParserConfigurationException, SAXException, IOException {
-        JFrame frame = new JFrame();
+    public static void main(String[] args) {
+
+        JFrame frame = new JFrame("Arithmetic Evaluator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
         frame.setLocationRelativeTo(null);
         frame.getContentPane().setBackground(new Color(255, 255, 255));
         frame.setLayout(new BorderLayout());
 
+        // Панель для размещения компонентов
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+
         JLabel expressionsLabel = new JLabel("Enter expressions:");
         expressionsLabel.setHorizontalAlignment(SwingConstants.CENTER);
         expressionsLabel.setFont(new Font("Arial", Font.BOLD, 16));
         expressionsLabel.setForeground(new Color(0, 102, 104));
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(expressionsLabel, gbc);
 
-        JTextArea expressions = new JTextArea(5, 30);
+        JTextArea expressions = new JTextArea(10, 30);
         expressions.setLineWrap(true);
         expressions.setWrapStyleWord(true);
         JScrollPane expressionsScroll = new JScrollPane(expressions);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        panel.add(expressionsScroll, gbc);
 
         JLabel resultsLabel = new JLabel("Results for expressions:");
         resultsLabel.setHorizontalAlignment(SwingConstants.CENTER);
         resultsLabel.setFont(new Font("Arial", Font.BOLD, 16));
         resultsLabel.setForeground(new Color(34, 139, 134));
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        panel.add(resultsLabel, gbc);
 
         JTextArea results = new JTextArea(10, 30);
         results.setEditable(false);
         results.setLineWrap(true);
         results.setWrapStyleWord(true);
         JScrollPane resultsScroll = new JScrollPane(results);
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        panel.add(resultsScroll, gbc);
 
+        // JComboBox для выбора форматов
+        String[] formats = {"TXT", "JSON", "XML", "YAML", "HTML", "BIN", "AES"};
+        JComboBox<String> inputFormat = new JComboBox<>(formats);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        panel.add(inputFormat, gbc);
+
+        JComboBox<String> outputFormat = new JComboBox<>(formats);
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        panel.add(outputFormat, gbc);
+
+        // Кнопки для чтения и записи
+        JButton readInput = new JButton("Read Input");
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        panel.add(readInput, gbc);
+
+        JButton writeInput = new JButton("Write Input");
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        panel.add(writeInput, gbc);
+
+        JButton readOutput = new JButton("Read Output");
+        gbc.gridx = 1;
+        gbc.gridy = 3;
+        panel.add(readOutput, gbc);
+
+        JButton writeOutput = new JButton("Write Output");
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        panel.add(writeOutput, gbc);
+
+        // JComboBox для видов обработки
+        String[] engines = {"Archive", "Encrypt", "Archive then Encrypt", "Encrypt then Archive", "DoNothing"};
+        JComboBox<String> inputEngine = new JComboBox<>(engines);
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        panel.add(inputEngine, gbc);
+
+        JComboBox<String> outputEngine = new JComboBox<>(engines);
+        gbc.gridx = 1;
+        gbc.gridy = 5;
+        panel.add(outputEngine, gbc);
+
+        // Кнопки для применения видов обработки
+        JButton applyInputEngine = new JButton("Apply Input Engine");
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        panel.add(applyInputEngine, gbc);
+
+        JButton applyOutputEngine = new JButton("Apply Output Engine");
+        gbc.gridx = 1;
+        gbc.gridy = 6;
+        panel.add(applyOutputEngine, gbc);
+
+        // Поля пароля и JComboBox для ключей шифрования и форматов сжатия
+        JLabel inputKeyLabel = new JLabel("Encryption Key (Input):");
+        inputKeyLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        inputKeyLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        inputKeyLabel.setForeground(new Color(34, 139, 34));
+        gbc.gridx = 0;
+        gbc.gridy = 7;
+        gbc.gridwidth = 1;
+        panel.add(inputKeyLabel, gbc);
+
+        JPasswordField inputEncryptionKey = new JPasswordField(30);
+        inputEncryptionKey.setEchoChar('*');
+        gbc.gridx = 0;
+        gbc.gridy = 8;
+        panel.add(inputEncryptionKey, gbc);
+
+        JLabel outputKeyLabel = new JLabel("Decryption Key (Output):");
+        outputKeyLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        outputKeyLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        outputKeyLabel.setForeground(new Color(34, 139, 34));
+        gbc.gridx = 1;
+        gbc.gridy = 7;
+        panel.add(outputKeyLabel, gbc);
+
+        JPasswordField outputEncryptionKey = new JPasswordField(30);
+        outputEncryptionKey.setEchoChar('*');
+        gbc.gridx = 1;
+        gbc.gridy = 8;
+        panel.add(outputEncryptionKey, gbc);
+
+        JLabel inputCompressionLabel = new JLabel("Compression Format (Input):");
+        inputCompressionLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        inputCompressionLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        inputCompressionLabel.setForeground(new Color(34, 139, 34));
+        gbc.gridx = 0;
+        gbc.gridy = 9;
+        panel.add(inputCompressionLabel, gbc);
+
+        String[] compressionFormats = {"RAR", "ZIP"};
+        JComboBox<String> inputCompressionFormat = new JComboBox<>(compressionFormats);
+        gbc.gridx = 0;
+        gbc.gridy = 10;
+        panel.add(inputCompressionFormat, gbc);
+
+        JLabel outputCompressionLabel = new JLabel("Compression Format (Output):");
+        outputCompressionLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        outputCompressionLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        outputCompressionLabel.setForeground(new Color(34, 139, 34));
+        gbc.gridx = 1;
+        gbc.gridy = 9;
+        panel.add(outputCompressionLabel, gbc);
+
+        JComboBox<String> outputCompressionFormat = new JComboBox<>(compressionFormats);
+        gbc.gridx = 1;
+        gbc.gridy = 10;
+        panel.add(outputCompressionFormat, gbc);
+
+        // Кнопка для вычисления
         JButton calculate = new JButton("Calculate");
+        calculate.setForeground(Color.DARK_GRAY);
+        calculate.setFont(new Font("Arial", Font.BOLD, 14));
+
+        gbc.gridx = 0;
+        gbc.gridy = 11;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        panel.add(calculate, gbc);
+
+        // Вычисление выражения
         calculate.setForeground(Color.DARK_GRAY);
         calculate.setFont(new Font("Arial", Font.BOLD, 14));
         calculate.addActionListener(new ActionListener() {
@@ -59,291 +202,321 @@ public class UI {
             }
         });
 
-        JPanel formatPanel = new JPanel(new FlowLayout());
-        String[] formats = {"TXT", "JSON", "XML", "YAML", "HTML", "BIN"};
-        JComboBox<String> inputFormat = new JComboBox<>(formats);
-        JComboBox<String> outputFormat = new JComboBox<>(formats);
-        formatPanel.add(new JLabel("Input format:"));
-        formatPanel.add(inputFormat);
-        formatPanel.add(new JLabel("Output format:"));
-        formatPanel.add(outputFormat);
-        formatPanel.setBackground(new Color(173, 216, 230));
-
-        JButton writeButton = new JButton("Write to file");
-        writeButton.setBackground(new Color(144, 238, 144));
-        writeButton.setForeground(Color.BLACK);
-        writeButton.setFont(new Font("Arial", Font.BOLD, 12));
-        writeButton.addActionListener(new ActionListener() {
+        // Чтение файла входного
+        readInput.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String selectedInputFormat = (inputFormat.getSelectedItem() != null)
                         ? inputFormat.getSelectedItem().toString().toLowerCase()
                         : "txt";
-                String selectedOutputFormat = (outputFormat.getSelectedItem() != null)
-                        ? outputFormat.getSelectedItem().toString().toLowerCase()
-                        : "txt";
+                String encryptionKey = new String(inputEncryptionKey.getPassword());
+                SecretKey key = Encryption.getSecretKey(encryptionKey);
 
-                String methodName = "write_" + selectedInputFormat;
-                String exp = expressions.getText();
-                ArrayList<String> lines = new ArrayList<>(Arrays.asList(exp.split("\n")));
-                String res = results.getText();
-                ArrayList<String> arithmetic_lines = new ArrayList<>(Arrays.asList(res.split("\n")));
+                JFileChooser fileChooser = new JFileChooser();
 
-                try {
-                    Method method = ReadWrite.class.getDeclaredMethod(methodName, String.class, ArrayList.class, boolean.class);
-                    method.invoke(null, "input." + selectedInputFormat, lines, true);
+                fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                        selectedInputFormat.toUpperCase() + " files, ZIP and RAR files",
+                        selectedInputFormat, "zip", "rar"));
+                int returnValue = fileChooser.showOpenDialog(null);
 
-                    String outputMethodName = "write_" + selectedOutputFormat;
-                    Method outputMethod = ReadWrite.class.getDeclaredMethod(outputMethodName, String.class, ArrayList.class, boolean.class);
-                    outputMethod.invoke(null, "output." + selectedOutputFormat, arithmetic_lines, false);
-                } catch (NoSuchMethodException ex) {
-                    System.out.println("Метод не найден: " + ex.getMessage());
-                } catch (InvocationTargetException ex) {
-                    System.out.println("Ошибка во время вызова метода: " + ex.getCause().getMessage());
-                } catch (IllegalAccessException ex) {
-                    System.out.println("Нет доступа к методу: " + ex.getMessage());
-                } catch (Exception ex) {
-                    System.out.println("Произошла ошибка: " + ex.getMessage());
-                }
-            }});
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
 
-        JButton readButton = new JButton("Read from file");
-        readButton.setBackground(new Color(144, 238, 144)); // Lighter green
-        readButton.setForeground(Color.DARK_GRAY);
-        readButton.setFont(new Font("Arial", Font.BOLD, 12));
-        readButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String selectedInputFormat = (inputFormat.getSelectedItem() != null)
-                        ? inputFormat.getSelectedItem().toString().toLowerCase()
-                        : "txt";
-                String selectedOutputFormat = (outputFormat.getSelectedItem() != null)
-                        ? outputFormat.getSelectedItem().toString().toLowerCase()
-                        : "txt";
+                    String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                    File tempDir = new File(tempDirPath);
 
-                String input_methodName = "read_" + selectedInputFormat;
-                String output_methodName = "read_" + selectedOutputFormat;
-                try {
-                    Method input_method = ReadWrite.class.getDeclaredMethod(input_methodName, String.class, boolean.class);
-                    ArrayList<String> input_data = (ArrayList<String>) input_method.invoke(null, "input." + selectedInputFormat, true);
-                    expressions.setText("");
-                    for (String line : input_data) {
-                        expressions.append(line + "\n");
+                    if (!tempDir.exists()) {
+                        tempDir.mkdirs();
                     }
 
-                    Method output_method = ReadWrite.class.getDeclaredMethod(output_methodName, String.class, boolean.class);
-                    ArrayList<String> output_data = (ArrayList<String>) output_method.invoke(null, "output." + selectedOutputFormat, false);
-                    results.setText("");
-                    for (String line : output_data) {
-                        results.append(line + "\n");
+                    try {
+                        if ((selectedFile.getName().endsWith(".zip") || selectedFile.getName().endsWith(".rar"))) {
+                            if (selectedFile.getName().endsWith(".zip")) {
+                                Archive.unzip(selectedFile.getAbsolutePath(), tempDirPath);
+                            } else if (selectedFile.getName().endsWith(".rar")) {
+                                Archive.unrar(selectedFile.getAbsolutePath(), tempDirPath);
+                            }
+                            JFileChooser tempFileChooser = new JFileChooser(tempDir);
+                            tempFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(selectedInputFormat.toUpperCase() + " files", selectedInputFormat));
+                            int fileChooserReturnValue = tempFileChooser.showOpenDialog(null);
+                            if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION) {
+                                File chosenFile = tempFileChooser.getSelectedFile();
+                                ArrayList<String> lines = (ArrayList<String>) Files.readAllLines(chosenFile.toPath());
+                                expressions.setText("");
+                                for (String line : lines) {
+                                    expressions.append(line + "\n");
+                                }
+                            }
+                        }
+
+                        else if (selectedFile.getName().endsWith(".aes")) {
+                            String decryptFilePath = tempDirPath + "/decrypted_" + selectedFile.getName().replace(".aes", ".txt");
+                            Encryption.decrypt(decryptFilePath, selectedFile.getAbsolutePath(), key);
+                            ArrayList<String> lines = (ArrayList<String>) Files.readAllLines(Paths.get(decryptFilePath));
+                            expressions.setText("");
+                            for (String line : lines) {
+                                expressions.append(line + "\n");
+                            }
+                        }
+
+                        else {
+                            ArrayList<String> input_data = (ArrayList<String>) Files.readAllLines(Path.of(selectedFile.getAbsolutePath()));
+                            expressions.setText("");
+                            for (String line : input_data) {
+                                expressions.append(line + "\n");
+                            }
+                        }
+                    } catch (Exception ex) {
+                        System.out.println(ex.getMessage());
                     }
                 }
-                catch (Exception ex) {
-                    System.out.println(ex.getMessage());
-                }
             }
         });
 
-        JPanel archivePanel = new JPanel(new FlowLayout());
-        archivePanel.setBackground(new Color(255, 228, 196));
-        String[] archiveFormats = {"ZIP", "RAR"};
-        JComboBox<String> archiveFormat = new JComboBox<>(archiveFormats);
-        archivePanel.add(new JLabel("Archive format:"));
-        archivePanel.add(archiveFormat);
-
-        JButton archiveButton = new JButton("Archive");
-        archiveButton.setFont(new Font("Arial", Font.BOLD, 14));
-        archiveButton.setForeground(new Color(140, 80, 250));
-        archiveButton.addActionListener(new ActionListener() {
+        // Чтение файла выходного
+        readOutput.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                // Логика архивирования
-                String selectedArchiveFormat = (archiveFormat.getSelectedItem() != null)
-                        ? archiveFormat.getSelectedItem().toString().toLowerCase()
-                        : "zip";
-
-                String selectedInputFormat = (inputFormat.getSelectedItem() != null)
-                        ? inputFormat.getSelectedItem().toString().toLowerCase()
-                        : "txt";
                 String selectedOutputFormat = (outputFormat.getSelectedItem() != null)
                         ? outputFormat.getSelectedItem().toString().toLowerCase()
                         : "txt";
-                try {
-                    ArrayList<String> filenames = new ArrayList<>();
-                    filenames.add("input." + selectedInputFormat);
-                    filenames.add("output." + selectedOutputFormat);
-                    Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
-                    method.invoke(null, filenames, "archive." + selectedArchiveFormat);
-                }
-                catch (Exception ex) {
-                    System.out.println(ex.getMessage());
+                JFileChooser fileChooser = new JFileChooser();
+
+                fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                        selectedOutputFormat.toUpperCase() + " files, ZIP and RAR files",
+                        selectedOutputFormat, "zip", "rar"));
+                int returnValue = fileChooser.showOpenDialog(null);
+
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+
+                    String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                    File tempDir = new File(tempDirPath);
+
+                    if (!tempDir.exists()) {
+                        tempDir.mkdirs();
+                    }
+
+                    try {
+                        if ((selectedFile.getName().endsWith(".zip") || selectedFile.getName().endsWith(".rar"))) {
+                            if (selectedFile.getName().endsWith(".zip")) {
+                                Archive.unzip(selectedFile.getAbsolutePath(), tempDirPath);
+                            } else if (selectedFile.getName().endsWith(".rar")) {
+                                Archive.unrar(selectedFile.getAbsolutePath(), tempDirPath);
+                            }
+                            JFileChooser tempFileChooser = new JFileChooser(tempDir);
+                            tempFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(selectedOutputFormat.toUpperCase() + " files", selectedOutputFormat));
+                            int fileChooserReturnValue = tempFileChooser.showOpenDialog(null);
+                            if (fileChooserReturnValue == JFileChooser.APPROVE_OPTION) {
+                                File chosenFile = tempFileChooser.getSelectedFile();
+                                ArrayList<String> lines = (ArrayList<String>) Files.readAllLines(chosenFile.toPath());
+                                results.setText("");
+                                for (String line : lines) {
+                                    results.append(line + "\n");
+                                }
+                            }
+                        } else {
+                            ArrayList<String> output_data = (ArrayList<String>) Files.readAllLines(Path.of(selectedFile.getAbsolutePath()));
+                            results.setText("");
+                            for (String line : output_data) {
+                                results.append(line + "\n");
+                            }
+                        }
+                    } catch (Exception ex) {
+                        System.out.println(ex.getMessage());
+                    }
                 }
             }
         });
 
-        // Создаем панель для кнопок действий с использованием BoxLayout
-        JPanel actionPanel = new JPanel();
-        actionPanel.setLayout(new BoxLayout(actionPanel, BoxLayout.Y_AXIS));
-        actionPanel.setBackground(new Color(100, 180, 190));
-
-        JButton encryptButton = new JButton("Encrypt");
-        encryptButton.setFont(new Font("Arial", Font.BOLD, 14));
-        encryptButton.setForeground(new Color(140, 80, 250));
-        JButton archiveThenEncryptButton = new JButton("Archive then Encrypt");
-        archiveThenEncryptButton.setFont(new Font("Arial", Font.BOLD, 14));
-        archiveThenEncryptButton.setForeground(new Color(140, 80, 250));
-        JButton encryptThenArchiveButton = new JButton("Encrypt then Archive");
-        encryptThenArchiveButton.setFont(new Font("Arial", Font.BOLD, 14));
-        encryptThenArchiveButton.setForeground(new Color(140, 80, 250));
-        JButton doNothingButton = new JButton("Do Nothing");
-        doNothingButton.setFont(new Font("Arial", Font.BOLD, 14));
-        doNothingButton.setForeground(new Color(140, 80, 250));
-
-        // Установка одинакового размера для всех кнопок
-        Dimension buttonSize = new Dimension(200, 95);
-        encryptButton.setMaximumSize(buttonSize);
-        archiveThenEncryptButton.setMaximumSize(buttonSize);
-        encryptThenArchiveButton.setMaximumSize(buttonSize);
-        doNothingButton.setMaximumSize(buttonSize);
-        archiveButton.setMaximumSize(buttonSize);
-        calculate.setMaximumSize(buttonSize);
-        writeButton.setMaximumSize(buttonSize);
-        readButton.setMaximumSize(buttonSize);
-
-        // Добавление кнопок в actionPanel
-        actionPanel.add(encryptButton);
-        actionPanel.add(archiveThenEncryptButton);
-        actionPanel.add(encryptThenArchiveButton);
-        actionPanel.add(doNothingButton);
-
-        // Действия для кнопок
-        encryptButton.addActionListener(e -> {
-            // Логика шифрования
-            try {
-                KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-                keyGen.init(128);
-                SecretKey key = keyGen.generateKey();
+        // Запись во входной файл
+        writeInput.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 String selectedInputFormat = (inputFormat.getSelectedItem() != null)
                         ? inputFormat.getSelectedItem().toString().toLowerCase()
                         : "txt";
+                JFileChooser fileChooser = new JFileChooser();
+
+                fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                        selectedInputFormat.toUpperCase() + " files",
+                        selectedInputFormat));
+                int returnValue = fileChooser.showSaveDialog(null);
+
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+                    String fileName = selectedFile.getAbsolutePath();
+
+                    // Добавляем расширение, если его нет
+                    if (!fileName.endsWith("." + selectedInputFormat)) {
+                        fileName += "." + selectedInputFormat;
+                        selectedFile = new File(fileName);
+                    }
+
+                    String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                    File tempDir = new File(tempDirPath);
+
+                    if (!tempDir.exists()) {
+                        tempDir.mkdirs();
+                    }
+
+                    try {
+                        Files.write(selectedFile.toPath(), expressions.getText().lines().toList());
+                    }
+                    catch (Exception ex) {
+                        System.out.println(ex.getMessage());
+                    }
+                }
+            }
+        });
+
+        // Запись в выходной файл
+        writeOutput.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 String selectedOutputFormat = (outputFormat.getSelectedItem() != null)
                         ? outputFormat.getSelectedItem().toString().toLowerCase()
                         : "txt";
-                Encryption.encrypt("input." + selectedInputFormat, "input_encrypt." + selectedInputFormat, key);
-                Encryption.encrypt(selectedOutputFormat, "output_encrypt." + selectedOutputFormat, key);
-            }
-            catch (Exception ex) {
-                System.out.println(ex.getMessage());
-            }
-        });
+                JFileChooser fileChooser = new JFileChooser();
 
-        archiveThenEncryptButton.addActionListener(e -> {
-            // Логика архивирования, потом шифрования
-            String selectedArchiveFormat = (archiveFormat.getSelectedItem() != null)
-                    ? archiveFormat.getSelectedItem().toString().toLowerCase()
-                    : "zip";
+                fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                        selectedOutputFormat.toUpperCase() + " files",
+                        selectedOutputFormat));
+                int returnValue = fileChooser.showSaveDialog(null);
 
-            String selectedInputFormat = (inputFormat.getSelectedItem() != null)
-                    ? inputFormat.getSelectedItem().toString().toLowerCase()
-                    : "txt";
-            String selectedOutputFormat = (outputFormat.getSelectedItem() != null)
-                    ? outputFormat.getSelectedItem().toString().toLowerCase()
-                    : "txt";
-            try {
-                ArrayList<String> filenames = new ArrayList<>();
-                filenames.add("input." + selectedInputFormat);
-                filenames.add("output." + selectedOutputFormat);
-                Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
-                method.invoke(null, filenames, "archive." + selectedArchiveFormat);
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+                    String fileName = selectedFile.getAbsolutePath();
 
-                KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-                keyGen.init(128);
-                SecretKey key = keyGen.generateKey();
-                Encryption.encrypt("archive." + selectedArchiveFormat, "encrypt." + "aes", key);
-            }
-            catch (Exception ex) {
-                System.out.println(ex.getMessage());
+                    // Добавляем расширение, если его нет
+                    if (!fileName.endsWith("." + selectedOutputFormat)) {
+                        fileName += "." + selectedOutputFormat;
+                        selectedFile = new File(fileName);
+                    }
+
+                    String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                    File tempDir = new File(tempDirPath);
+
+                    if (!tempDir.exists()) {
+                        tempDir.mkdirs();
+                    }
+
+                    try {
+                        Files.write(selectedFile.toPath(), results.getText().lines().toList());
+                    }
+                    catch (Exception ex) {
+                        System.out.println(ex.getMessage());
+                    }
+                }
             }
         });
 
-        encryptThenArchiveButton.addActionListener(e -> {
-            // Логика шифрования, потом архивирования
-            String selectedArchiveFormat = (archiveFormat.getSelectedItem() != null)
-                    ? archiveFormat.getSelectedItem().toString().toLowerCase()
-                    : "zip";
+        applyInputEngine.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String selectedEngineFormat = (inputEngine.getSelectedItem() != null)
+                        ? inputEngine.getSelectedItem().toString().toLowerCase()
+                        : "donothing";
+                String selectedInputFormat = (inputFormat.getSelectedItem() != null)
+                        ? inputFormat.getSelectedItem().toString().toLowerCase()
+                        : "txt";
+                String selectedArchiveFormat = (inputCompressionFormat.getSelectedItem() != null)
+                        ? inputCompressionFormat.getSelectedItem().toString().toLowerCase()
+                        : "rar";
+                String encryptionKey = new String(inputEncryptionKey.getPassword());
+                SecretKey key = Encryption.getSecretKey(encryptionKey);
 
-            String selectedInputFormat = (inputFormat.getSelectedItem() != null)
-                    ? inputFormat.getSelectedItem().toString().toLowerCase()
-                    : "txt";
-            String selectedOutputFormat = (outputFormat.getSelectedItem() != null)
-                    ? outputFormat.getSelectedItem().toString().toLowerCase()
-                    : "txt";
-            try {
-                KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-                keyGen.init(128);
-                SecretKey key = keyGen.generateKey();
-                Encryption.encrypt("input." + selectedInputFormat, "input_encrypt." + selectedInputFormat, key);
-                Encryption.encrypt(selectedOutputFormat, "output_encrypt." + selectedOutputFormat, key);
+                switch (selectedEngineFormat) {
+                    case "archive":
+                        // Выбор файла для архивации
+                        JFileChooser fileChooser = new JFileChooser();
+                        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                selectedInputFormat.toUpperCase() + " files",
+                                selectedInputFormat));
+                        int returnValue = fileChooser.showOpenDialog(null);
 
-                ArrayList<String> filenames = new ArrayList<>();
-                filenames.add("input_encrypt." + selectedInputFormat);
-                filenames.add("output_encrypt." + selectedOutputFormat);
-                Method method = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
-                method.invoke(null, filenames, "archive." + selectedArchiveFormat);
-            }
-            catch (Exception ex) {
-                System.out.println(ex.getMessage());
+                        if (returnValue == JFileChooser.APPROVE_OPTION) {
+                            File fileToArchive = fileChooser.getSelectedFile();
+
+                            // Выбор архива, в который будет добавлен файл
+                            JFileChooser archiveChooser = new JFileChooser();
+                            archiveChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                    selectedArchiveFormat.toUpperCase() + " files" ,selectedArchiveFormat));
+                            int archiveReturnValue = archiveChooser.showSaveDialog(null);
+
+                            if (archiveReturnValue == JFileChooser.APPROVE_OPTION) {
+                                File archiveFile = archiveChooser.getSelectedFile();
+                                String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                                File tempDir = new File(tempDirPath);
+
+                                if (!tempDir.exists()) {
+                                    tempDir.mkdirs();
+                                }
+
+                                try {
+                                    // Создаем временный файл, если выбрано сохранение в архив
+                                    File tempFile = new File(tempDirPath, fileToArchive.getName());
+                                    Files.copy(fileToArchive.toPath(), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                                    ArrayList<String> filenames = new ArrayList<>();
+                                    filenames.add(tempFile.getAbsolutePath());
+                                    Method archiveMethod = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                                    archiveMethod.setAccessible(true);
+                                    archiveMethod.invoke(Archive.class, filenames, archiveFile.getAbsolutePath());
+                                } catch (Exception ex) {
+                                    System.out.println(ex.getMessage());
+                                }
+                            }
+                        }
+                        break;
+
+                    case "encrypt":
+                        JFileChooser encryptfilechooser = new JFileChooser();
+                        encryptfilechooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                selectedInputFormat.toUpperCase() + " files", selectedInputFormat)
+                        );
+                        int encryptReturnValue = encryptfilechooser.showOpenDialog(null);
+
+                        if (encryptReturnValue == JFileChooser.APPROVE_OPTION) {
+                            File fileToEncrypt = encryptfilechooser.getSelectedFile();
+
+                            JFileChooser SaveFileChooser = new JFileChooser();
+                            SaveFileChooser.setFileFilter((new javax.swing.filechooser.FileNameExtensionFilter(
+                                    "Encrypted files", "aes")));
+                            int saveReturnValue = SaveFileChooser.showSaveDialog(null);
+
+                            if (saveReturnValue == JFileChooser.APPROVE_OPTION) {
+                                File saveFile = SaveFileChooser.getSelectedFile();
+                                String saveFilePath = saveFile.getAbsolutePath();
+
+                                // Добавляем расширение .aes, если его нет
+                                if (!saveFilePath.endsWith(".aes")) {
+                                    saveFilePath += ".aes";
+                                    saveFile = new File(saveFilePath);
+                                }
+
+                                Encryption.encrypt(fileToEncrypt.getAbsolutePath(), saveFile.getAbsolutePath(), key);
+                            }
+                        }
+                        break;
+
+                    case "archive then encrypt":
+                        System.out.println("Archive then Encrypt method called");
+                        break;
+                    case "encrypt then archive":
+                        System.out.println("Encrypt then Archive method called");
+                        break;
+                    default:
+                        System.out.println("No action selected");
+                        break;
+                }
             }
         });
-        doNothingButton.addActionListener(e -> {
-            // Ничего не делать
-        });
 
-        // Создаем главную панель для размещения всех элементов
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BorderLayout());
-        mainPanel.setBackground(new Color(120, 240, 240));
 
-        mainPanel.add(expressionsLabel, BorderLayout.NORTH);
-        mainPanel.add(expressionsScroll, BorderLayout.CENTER);
+        gbc.gridx = 0;
+        gbc.gridy = 11;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        panel.add(calculate, gbc);
 
-        // Панель для результатов
-        JPanel resultsPanel = new JPanel(new BorderLayout());
-        resultsPanel.add(resultsLabel, BorderLayout.NORTH);
-        resultsPanel.add(resultsScroll, BorderLayout.CENTER);
-        resultsPanel.setBackground(new Color(120, 240, 150));
-
-        mainPanel.add(resultsPanel, BorderLayout.SOUTH);
-
-        // Добавление всех компонентов в окно
-        frame.add(mainPanel, BorderLayout.CENTER);
-
-        JPanel bottomPanel = new JPanel(); // Создаем JPanel
-        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS)); // Устанавливаем BoxLayout
-
-        // Создаем JPanel для каждой кнопки
-        JPanel writePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        writePanel.add(writeButton);
-        writePanel.setBackground(new Color(240, 255, 240));
-
-        JPanel readPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        readPanel.add(readButton);
-        readPanel.setBackground(new Color(173, 216, 230));
-
-        // Добавляем панели в bottomPanel
-        bottomPanel.add(writePanel);
-        bottomPanel.add(readPanel);
-        bottomPanel.add(formatPanel);
-        bottomPanel.add(archivePanel);
-
-        JPanel actionBottomPanel = new JPanel();
-        actionBottomPanel.setLayout(new BoxLayout(actionBottomPanel, BoxLayout.Y_AXIS));
-        actionBottomPanel.setBackground(new Color(100, 180, 190));
-        actionBottomPanel.add(archiveButton);
-        actionBottomPanel.add(actionPanel);
-
-        frame.add(bottomPanel, BorderLayout.SOUTH);
-        frame.add(actionBottomPanel, BorderLayout.EAST);
-
-        frame.add(calculate, BorderLayout.WEST);
-
+        // Добавляем панель к фрейму
+        frame.add(panel, BorderLayout.CENTER);
         frame.setVisible(true);
     }
 }
