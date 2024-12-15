@@ -1,10 +1,11 @@
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,7 +97,7 @@ public class UI {
         panel.add(writeOutput, gbc);
 
         // JComboBox для видов обработки
-        String[] engines = {"Archive", "Encrypt", "Archive then Encrypt", "Encrypt then Archive", "DoNothing"};
+        String[] engines = {"Archive", "Encrypt", "Archive then Encrypt", "Encrypt then Archive"};
         JComboBox<String> inputEngine = new JComboBox<>(engines);
         gbc.gridx = 0;
         gbc.gridy = 5;
@@ -221,7 +222,7 @@ public class UI {
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
 
-                    String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                    String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
                     File tempDir = new File(tempDirPath);
 
                     if (!tempDir.exists()) {
@@ -265,7 +266,9 @@ public class UI {
                                 expressions.append(line + "\n");
                             }
                         }
-                    } catch (Exception ex) {
+                    }
+
+                    catch (Exception ex) {
                         System.out.println(ex.getMessage());
                     }
                 }
@@ -278,6 +281,9 @@ public class UI {
                 String selectedOutputFormat = (outputFormat.getSelectedItem() != null)
                         ? outputFormat.getSelectedItem().toString().toLowerCase()
                         : "txt";
+                String encryptionKey = new String(inputEncryptionKey.getPassword());
+                SecretKey key = Encryption.getSecretKey(encryptionKey);
+
                 JFileChooser fileChooser = new JFileChooser();
 
                 fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
@@ -288,7 +294,7 @@ public class UI {
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
 
-                    String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                    String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
                     File tempDir = new File(tempDirPath);
 
                     if (!tempDir.exists()) {
@@ -313,14 +319,27 @@ public class UI {
                                     results.append(line + "\n");
                                 }
                             }
-                        } else {
+                        }
+
+                        else if (selectedFile.getName().endsWith(".aes")) {
+                            String decryptFilePath = tempDirPath + "/decrypted_" + selectedFile.getName().replace(".aes", ".txt");
+                            Encryption.decrypt(decryptFilePath, selectedFile.getAbsolutePath(), key);
+                            ArrayList<String> lines = (ArrayList<String>) Files.readAllLines(Paths.get(decryptFilePath));
+                            results.setText("");
+                            for (String line : lines) {
+                                results.append(line + "\n");
+                            }
+                        }
+
+                        else {
                             ArrayList<String> output_data = (ArrayList<String>) Files.readAllLines(Path.of(selectedFile.getAbsolutePath()));
                             results.setText("");
                             for (String line : output_data) {
                                 results.append(line + "\n");
                             }
                         }
-                    } catch (Exception ex) {
+                    }
+                    catch (Exception ex) {
                         System.out.println(ex.getMessage());
                     }
                 }
@@ -350,7 +369,7 @@ public class UI {
                         selectedFile = new File(fileName);
                     }
 
-                    String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                    String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
                     File tempDir = new File(tempDirPath);
 
                     if (!tempDir.exists()) {
@@ -390,7 +409,7 @@ public class UI {
                         selectedFile = new File(fileName);
                     }
 
-                    String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                    String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
                     File tempDir = new File(tempDirPath);
 
                     if (!tempDir.exists()) {
@@ -411,7 +430,7 @@ public class UI {
             public void actionPerformed(ActionEvent e) {
                 String selectedEngineFormat = (inputEngine.getSelectedItem() != null)
                         ? inputEngine.getSelectedItem().toString().toLowerCase()
-                        : "donothing";
+                        : "archive";
                 String selectedInputFormat = (inputFormat.getSelectedItem() != null)
                         ? inputFormat.getSelectedItem().toString().toLowerCase()
                         : "txt";
@@ -441,7 +460,7 @@ public class UI {
 
                             if (archiveReturnValue == JFileChooser.APPROVE_OPTION) {
                                 File archiveFile = archiveChooser.getSelectedFile();
-                                String tempDirPath = System.getProperty("java.io.tmpdir") + "archive_temp";
+                                String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
                                 File tempDir = new File(tempDirPath);
 
                                 if (!tempDir.exists()) {
@@ -496,11 +515,105 @@ public class UI {
                         break;
 
                     case "archive then encrypt":
-                        System.out.println("Archive then Encrypt method called");
+                        // Выбор файла для архивации
+                        JFileChooser ArchiveEncryptFileChooser = new JFileChooser();
+                        ArchiveEncryptFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                selectedInputFormat.toUpperCase() + " files",
+                                selectedInputFormat));
+                        int ArchiveEncryptReturnValue = ArchiveEncryptFileChooser.showOpenDialog(null);
+
+                        if (ArchiveEncryptReturnValue == JFileChooser.APPROVE_OPTION) {
+                            File fileToArchive = ArchiveEncryptFileChooser.getSelectedFile();
+
+                            String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
+                            File tempDir = new File(tempDirPath);
+                            if (!tempDir.exists()) {
+                                tempDir.mkdirs();
+                            }
+
+                            try {
+                                // Создаем временный файл, если выбрано сохранение в архив
+                                File tempFile = new File(tempDirPath, fileToArchive.getName());
+                                Files.copy(fileToArchive.toPath(), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                                ArrayList<String> filenames = new ArrayList<>();
+                                filenames.add(tempFile.getAbsolutePath());
+                                String archivePath = tempDirPath + "/archive." + selectedArchiveFormat;
+                                Method archiveMethod = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                                archiveMethod.setAccessible(true);
+                                archiveMethod.invoke(Archive.class, filenames, archivePath);
+
+                                JFileChooser SaveFileChooser = new JFileChooser();
+                                SaveFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                        "Encrypted files", "aes")
+                                );
+                                int SaveArchiveReturnValue = SaveFileChooser.showSaveDialog(null);
+                                if (SaveArchiveReturnValue == JFileChooser.APPROVE_OPTION) {
+                                    File SaveFile = SaveFileChooser.getSelectedFile();
+                                    String saveFilePath = SaveFile.getAbsolutePath();
+                                    if (!saveFilePath.endsWith(".aes")) {
+                                        saveFilePath += ".aes";
+                                        SaveFile = new File(saveFilePath);
+                                    }
+
+                                    Encryption.encrypt(archivePath, SaveFile.getAbsolutePath(), key);
+                                }
+
+                            }
+                            catch (Exception ex) {
+                                System.out.println(ex.getMessage());
+                            }
+                        }
                         break;
+
                     case "encrypt then archive":
-                        System.out.println("Encrypt then Archive method called");
+                        // Выбор файла для шифрования и архивации
+                        JFileChooser EncryptArchiveFileChooser = new JFileChooser();
+                        EncryptArchiveFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                selectedInputFormat.toUpperCase() + " files", selectedInputFormat));
+                        int EncryptArchiveReturnValue = EncryptArchiveFileChooser.showOpenDialog(null);
+
+                        if (EncryptArchiveReturnValue == JFileChooser.APPROVE_OPTION) {
+                            File fileToEncrypt = EncryptArchiveFileChooser.getSelectedFile();
+
+                            JFileChooser saveFileChooser = new JFileChooser();
+                            saveFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                    selectedArchiveFormat.toUpperCase() + " files", selectedArchiveFormat));
+                            int saveReturnValue = saveFileChooser.showSaveDialog(null);
+
+                            if (saveReturnValue == JFileChooser.APPROVE_OPTION) {
+                                File saveFile = saveFileChooser.getSelectedFile();
+                                String saveFilePath = saveFile.getAbsolutePath();
+
+                                if (!saveFilePath.endsWith("." + selectedArchiveFormat)) {
+                                    saveFilePath += "." + selectedArchiveFormat;
+                                    saveFile = new File(saveFilePath);
+                                }
+
+                                String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp_" + System.currentTimeMillis();
+                                File tempDir = new File(tempDirPath);
+
+                                if (!tempDir.exists()) {
+                                    tempDir.mkdirs();
+                                }
+
+                                try {
+                                    File tempEncryptedFile = new File(tempDirPath, fileToEncrypt.getName() + ".aes");
+                                    Encryption.encrypt(fileToEncrypt.getAbsolutePath(), tempEncryptedFile.getAbsolutePath(), key);
+
+                                    ArrayList<String> filenames = new ArrayList<>();
+                                    filenames.add(tempEncryptedFile.getAbsolutePath());
+
+                                    Method archiveMethod = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                                    archiveMethod.setAccessible(true);
+                                    archiveMethod.invoke(Archive.class, filenames, saveFilePath);
+                                } catch (Exception ex) {
+                                    System.out.println(ex.getMessage());
+                                }
+                            }
+                        }
                         break;
+
                     default:
                         System.out.println("No action selected");
                         break;
@@ -508,6 +621,201 @@ public class UI {
             }
         });
 
+
+        applyOutputEngine.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String selectedEngineFormat = (outputEngine.getSelectedItem() != null)
+                        ? outputEngine.getSelectedItem().toString().toLowerCase()
+                        : "archive";
+                String selectedOutputFormat = (outputFormat.getSelectedItem() != null)
+                        ? outputFormat.getSelectedItem().toString().toLowerCase()
+                        : "txt";
+                String selectedArchiveFormat = (outputCompressionFormat.getSelectedItem() != null)
+                        ? outputCompressionFormat.getSelectedItem().toString().toLowerCase()
+                        : "rar";
+                String encryptionKey = new String(outputEncryptionKey.getPassword());
+                SecretKey key = Encryption.getSecretKey(encryptionKey);
+
+                switch (selectedEngineFormat) {
+                    case "archive":
+                        // Выбор файла для архивации
+                        JFileChooser fileChooser = new JFileChooser();
+                        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                selectedOutputFormat.toUpperCase() + " files",
+                                selectedOutputFormat));
+                        int returnValue = fileChooser.showOpenDialog(null);
+
+                        if (returnValue == JFileChooser.APPROVE_OPTION) {
+                            File fileToArchive = fileChooser.getSelectedFile();
+
+                            // Выбор архива, в который будет добавлен файл
+                            JFileChooser archiveChooser = new JFileChooser();
+                            archiveChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                    selectedArchiveFormat.toUpperCase() + " files" ,selectedArchiveFormat));
+                            int archiveReturnValue = archiveChooser.showSaveDialog(null);
+
+                            if (archiveReturnValue == JFileChooser.APPROVE_OPTION) {
+                                File archiveFile = archiveChooser.getSelectedFile();
+                                String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
+                                File tempDir = new File(tempDirPath);
+
+                                if (!tempDir.exists()) {
+                                    tempDir.mkdirs();
+                                }
+
+                                try {
+                                    // Создаем временный файл, если выбрано сохранение в архив
+                                    File tempFile = new File(tempDirPath, fileToArchive.getName());
+                                    Files.copy(fileToArchive.toPath(), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                                    ArrayList<String> filenames = new ArrayList<>();
+                                    filenames.add(tempFile.getAbsolutePath());
+                                    Method archiveMethod = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                                    archiveMethod.setAccessible(true);
+                                    archiveMethod.invoke(Archive.class, filenames, archiveFile.getAbsolutePath());
+                                } catch (Exception ex) {
+                                    System.out.println(ex.getMessage());
+                                }
+                            }
+                        }
+                        break;
+
+                    case "encrypt":
+                        JFileChooser encryptfilechooser = new JFileChooser();
+                        encryptfilechooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                selectedOutputFormat.toUpperCase() + " files", selectedOutputFormat)
+                        );
+                        int encryptReturnValue = encryptfilechooser.showOpenDialog(null);
+
+                        if (encryptReturnValue == JFileChooser.APPROVE_OPTION) {
+                            File fileToEncrypt = encryptfilechooser.getSelectedFile();
+
+                            JFileChooser SaveFileChooser = new JFileChooser();
+                            SaveFileChooser.setFileFilter((new javax.swing.filechooser.FileNameExtensionFilter(
+                                    "Encrypted files", "aes")));
+                            int saveReturnValue = SaveFileChooser.showSaveDialog(null);
+
+                            if (saveReturnValue == JFileChooser.APPROVE_OPTION) {
+                                File saveFile = SaveFileChooser.getSelectedFile();
+                                String saveFilePath = saveFile.getAbsolutePath();
+
+                                // Добавляем расширение .aes, если его нет
+                                if (!saveFilePath.endsWith(".aes")) {
+                                    saveFilePath += ".aes";
+                                    saveFile = new File(saveFilePath);
+                                }
+
+                                Encryption.encrypt(fileToEncrypt.getAbsolutePath(), saveFile.getAbsolutePath(), key);
+                            }
+                        }
+                        break;
+
+                    case "archive then encrypt":
+                        // Выбор файла для архивации
+                        JFileChooser ArchiveEncryptFileChooser = new JFileChooser();
+                        ArchiveEncryptFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                selectedOutputFormat.toUpperCase() + " files",
+                                selectedOutputFormat));
+                        int ArchiveEncryptReturnValue = ArchiveEncryptFileChooser.showOpenDialog(null);
+
+                        if (ArchiveEncryptReturnValue == JFileChooser.APPROVE_OPTION) {
+                            File fileToArchive = ArchiveEncryptFileChooser.getSelectedFile();
+
+                            String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
+                            File tempDir = new File(tempDirPath);
+                            if (!tempDir.exists()) {
+                                tempDir.mkdirs();
+                            }
+
+                            try {
+                                // Создаем временный файл, если выбрано сохранение в архив
+                                File tempFile = new File(tempDirPath, fileToArchive.getName());
+                                Files.copy(fileToArchive.toPath(), tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                                ArrayList<String> filenames = new ArrayList<>();
+                                filenames.add(tempFile.getAbsolutePath());
+                                String archivePath = tempDirPath + "/archive." + selectedArchiveFormat;
+                                Method archiveMethod = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                                archiveMethod.setAccessible(true);
+                                archiveMethod.invoke(Archive.class, filenames, archivePath);
+
+                                JFileChooser SaveFileChooser = new JFileChooser();
+                                SaveFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                        "Encrypted files", "aes")
+                                );
+                                int SaveArchiveReturnValue = SaveFileChooser.showSaveDialog(null);
+                                if (SaveArchiveReturnValue == JFileChooser.APPROVE_OPTION) {
+                                    File SaveFile = SaveFileChooser.getSelectedFile();
+                                    String saveFilePath = SaveFile.getAbsolutePath();
+                                    if (!saveFilePath.endsWith(".aes")) {
+                                        saveFilePath += ".aes";
+                                        SaveFile = new File(saveFilePath);
+                                    }
+
+                                    Encryption.encrypt(archivePath, SaveFile.getAbsolutePath(), key);
+                                }
+
+                            }
+                            catch (Exception ex) {
+                                System.out.println(ex.getMessage());
+                            }
+                        }
+                        break;
+
+                    case "encrypt then archive":
+                        // Выбор файла для шифрования и архивации
+                        JFileChooser EncryptArchiveFileChooser = new JFileChooser();
+                        EncryptArchiveFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                selectedOutputFormat.toUpperCase() + " files", selectedOutputFormat));
+                        int EncryptArchiveReturnValue = EncryptArchiveFileChooser.showOpenDialog(null);
+
+                        if (EncryptArchiveReturnValue == JFileChooser.APPROVE_OPTION) {
+                            File fileToEncrypt = EncryptArchiveFileChooser.getSelectedFile();
+
+                            JFileChooser saveFileChooser = new JFileChooser();
+                            saveFileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                                    selectedArchiveFormat.toUpperCase() + " files", selectedArchiveFormat));
+                            int saveReturnValue = saveFileChooser.showSaveDialog(null);
+
+                            if (saveReturnValue == JFileChooser.APPROVE_OPTION) {
+                                File saveFile = saveFileChooser.getSelectedFile();
+                                String saveFilePath = saveFile.getAbsolutePath();
+
+                                if (!saveFilePath.endsWith("." + selectedArchiveFormat)) {
+                                    saveFilePath += "." + selectedArchiveFormat;
+                                    saveFile = new File(saveFilePath);
+                                }
+
+                                String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp_" + System.currentTimeMillis();
+                                File tempDir = new File(tempDirPath);
+
+                                if (!tempDir.exists()) {
+                                    tempDir.mkdirs();
+                                }
+
+                                try {
+                                    File tempEncryptedFile = new File(tempDirPath, fileToEncrypt.getName() + ".aes");
+                                    Encryption.encrypt(fileToEncrypt.getAbsolutePath(), tempEncryptedFile.getAbsolutePath(), key);
+
+                                    ArrayList<String> filenames = new ArrayList<>();
+                                    filenames.add(tempEncryptedFile.getAbsolutePath());
+
+                                    Method archiveMethod = Archive.class.getDeclaredMethod(selectedArchiveFormat, ArrayList.class, String.class);
+                                    archiveMethod.setAccessible(true);
+                                    archiveMethod.invoke(Archive.class, filenames, saveFilePath);
+                                } catch (Exception ex) {
+                                    System.out.println(ex.getMessage());
+                                }
+                            }
+                        }
+                        break;
+
+                    default:
+                        System.out.println("No action selected");
+                        break;
+                }
+            }
+        });
 
         gbc.gridx = 0;
         gbc.gridy = 11;

@@ -26,21 +26,6 @@ public class Encryption {
         }
     }
 
-    /* public static byte[] decrypt(String decrypt_file, byte[] encrypted, SecretKey key) {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(decrypt_file));
-            Cipher cipher = Cipher.getInstance("AES");
-            cipher.init(Cipher.DECRYPT_MODE, key);
-            byte[] decrypted = cipher.doFinal(encrypted);
-            writer.write(new String(decrypted));
-            writer.close();
-            return decrypted;
-        }
-        catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-    }*/
-
     public static void decrypt(String decryptFile, String encryptedFilePath, SecretKey key) {
         try {
             byte[] fileContent = Files.readAllBytes(Paths.get(encryptedFilePath));
