@@ -1,7 +1,7 @@
 package org.example.web_rest;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.File;
 import java.util.*;
 
 public class Main {
@@ -52,11 +52,14 @@ public class Main {
             filenames.add("output.txt");
 
             // Шифрование расшифрование
-            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-            keyGen.init(128);
-            SecretKey key = keyGen.generateKey();
-            byte[] encrypted = Encryption.encrypt("input.txt", "encrypt.aes", key);
-            Encryption.decrypt("decrypt.txt", encrypted, key);
+            System.out.print("Enter password key: ");
+            Scanner in = new Scanner(System.in);
+            String password = in.nextLine();
+            SecretKey key = Encryption.getSecretKey(password);
+            Encryption.encrypt("input.txt", "encrypt.aes", key);
+            File encrypted_file = new File("encrypt.aes");
+            String filepath = encrypted_file.getAbsolutePath();
+            Encryption.decrypt("decrypt.txt", filepath, key);
             filenames.add("encrypt.aes");
             filenames.add("decrypt.txt");
 
