@@ -78,7 +78,7 @@ public class EncryptionTest {
 
         String decryptFile = "test.txt";
 
-        Encryption.decrypt(decryptFile, encrypted, secretKey);
+        Encryption.decrypt(decryptFile, "", secretKey);
 
         String decryptedMessage = new String(Files.readAllBytes(Paths.get(decryptFile)));
         assertEquals(originalMessage, decryptedMessage);

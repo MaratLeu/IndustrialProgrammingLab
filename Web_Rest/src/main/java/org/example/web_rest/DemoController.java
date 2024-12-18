@@ -7,11 +7,13 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 
 @RestController
 public class DemoController {
@@ -36,27 +38,6 @@ public class DemoController {
     @GetMapping("/find/{id}")
     public Customer findCustomerById(@PathVariable Integer id) {
         return customerRepository.findCustomerById(id);
-    }
-
-    @PostMapping("/calculate")
-    public String calculate(@RequestParam String expression) {
-        return Expression.evaluate_line(expression);
-    }
-
-    @PostMapping("/calculate_expressions")
-    public ResponseEntity<ArrayList<String>> calculateExpressions(@RequestBody ExpressionRequest request) {
-        if (request == null || request.getExpressions() == null || request.getExpressions().isEmpty()) {
-            return ResponseEntity.badRequest().body(new ArrayList<>(Collections.singletonList("Input expressions cannot be null or empty")));
-        }
-
-        try {
-            ArrayList<String> arithmeticExpressions = Expression.transform_to_arithmetic(request.getExpressions());
-            ArrayList<String> results = Expression.evaluateLines(arithmeticExpressions);
-            return ResponseEntity.ok(results);
-        } catch (Exception e) {
-            System.err.println("Error processing expressions: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>(Collections.singletonList("Error processing expressions: " + e.getMessage())));
-        }
     }
 
     @PostMapping("/archive")
@@ -126,60 +107,144 @@ public class DemoController {
         return result;
     }
 
-    @PostMapping("/writeToFile")
-    public String writeToFile(@RequestBody ExpressionRequest request) {
-        String result;
-        try {
-            ArrayList<String> expressions = request.getExpressions();
-            Method method = ReadWrite.class.getDeclaredMethod("write_" + request.getInputFormat(), String.class, ArrayList.class, boolean.class);
-            method.invoke(null, "input." + request.getInputFormat(), expressions, true);
-
-            ArrayList<String> results = request.getResults();
-            Method method1 = ReadWrite.class.getDeclaredMethod("write_" + request.getOutputFormat(), String.class, ArrayList.class, boolean.class);
-            method1.invoke(null, "output." + request.getOutputFormat(), results, false);
-
-            result = "Выражения и результаты успешно записаны в файлы";
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            System.err.println("Error processing expressions: " + e.getMessage());
-            result = "Ошибка записи в файл: " + e.getMessage();
-        }
-        return result;
+    @PostMapping("/calculate")
+    public String calculate(@RequestParam String expression) {
+        return Expression.evaluate_line(expression);
     }
 
-    @PostMapping("/readFromFile")
-    public ResponseEntity<ExpressionRequest> readFromFile(@RequestBody ExpressionRequest request) {
+    @PostMapping("/calculate_expressions")
+    public ResponseEntity<ArrayList<String>> calculate(@RequestBody ExpressionRequest request) {
+        if (request == null || request.getExpressions() == null || request.getExpressions().isEmpty()) {
+            return ResponseEntity.badRequest().body(new ArrayList<>(Collections.singletonList("Input expressions cannot be null or empty")));
+        }
+
+        try {
+            ArrayList<String> arithmeticExpressions = Expression.transform_to_arithmetic(request.getExpressions());
+            ArrayList<String> results = Expression.evaluateLines(arithmeticExpressions);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            System.err.println("Error processing expressions: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>(Collections.singletonList("Error processing expressions: " + e.getMessage())));
+        }
+    }
+
+    @PostMapping("/readFromInputFile")
+    public ResponseEntity<Map<String, Object>> readFromInputFile(@RequestBody ExpressionRequest request) {
+        Map<String, Object> response = new HashMap<>();
         try {
             String inputFormat = request.getInputFormat();
-            String outputFormat = request.getOutputFormat();
+            String encryptionKey = request.getEncryptionKey();
+            String fileContent = request.getFileContent();
 
-            Method method = ReadWrite.class.getDeclaredMethod("read_" + inputFormat, String.class, boolean.class);
-            ArrayList<String> expressions = (ArrayList<String>) method.invoke(null, "input." + inputFormat, true);
+            SecretKey key = Encryption.getSecretKey(encryptionKey);
 
-            Method method1 = ReadWrite.class.getDeclaredMethod("read_" + outputFormat, String.class, boolean.class);
-            ArrayList<String> results = (ArrayList<String>) method1.invoke(null, "output." + outputFormat, false);
+            // Создаем временный файл из содержимого файла
+            String tempFilePath = System.getProperty("java.io.tmpdir") + "/input_temp" + System.currentTimeMillis() + "." + inputFormat;
+            Files.write(Paths.get(tempFilePath), fileContent.getBytes());
+            File selectedFile = new File(tempFilePath);
 
-            request.setExpressions(expressions);
-            request.setResults(results);
-            return ResponseEntity.ok(request);
+            // Создаем временную директорию
+            String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
+            File tempDir = new File(tempDirPath);
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
+
+            ArrayList<String> expressions = new ArrayList<>();
+
+            if (selectedFile.getName().endsWith(".zip") || selectedFile.getName().endsWith(".rar")) {
+                if (selectedFile.getName().endsWith(".zip")) {
+                    Archive.unzip(selectedFile.getAbsolutePath(), tempDirPath);
+                } else if (selectedFile.getName().endsWith(".rar")) {
+                    Archive.unrar(selectedFile.getAbsolutePath(), tempDirPath);
+                }
+
+                File[] extractedFiles = tempDir.listFiles();
+                if (extractedFiles != null && extractedFiles.length > 0) {
+                    File extractedFile = extractedFiles[0];
+                    expressions = (ArrayList<String>) Files.readAllLines(extractedFile.toPath());
+                }
+            } else if (selectedFile.getName().endsWith(".aes")) {
+                String decryptFilePath = tempDirPath + "/decrypted_" + selectedFile.getName().replace(".aes", ".txt");
+                Encryption.decrypt(decryptFilePath, selectedFile.getAbsolutePath(), key);
+                expressions = (ArrayList<String>) Files.readAllLines(Paths.get(decryptFilePath));
+            } else {
+                expressions = (ArrayList<String>) Files.readAllLines(selectedFile.toPath());
+            }
+
+            response.put("expressions", expressions);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("Ошибка работы с файлами: " + e.getMessage());
+            response.put("error", "Ошибка работы с файлами: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
-        catch (Exception e) {
-            System.err.println("Error reading file: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-
     }
 
+    @PostMapping("/readFromOutputFile")
+    public ResponseEntity<Map<String, Object>> readFromOutputFile(@RequestBody ExpressionRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String outputFormat = request.getOutputFormat();
+            String encryptionKey = request.getEncryptionKey();
+            String fileContent = request.getFileContent();
+
+            SecretKey key = Encryption.getSecretKey(encryptionKey);
+
+            // Создаем временный файл из содержимого файла
+            String tempFilePath = System.getProperty("java.io.tmpdir") + "/input_temp" + System.currentTimeMillis() + "." + outputFormat;
+            Files.write(Paths.get(tempFilePath), fileContent.getBytes());
+            File selectedFile = new File(tempFilePath);
+
+            // Создаем временную директорию
+            String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
+            File tempDir = new File(tempDirPath);
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
+
+            ArrayList<String> expressions = new ArrayList<>();
+
+            if (selectedFile.getName().endsWith(".zip") || selectedFile.getName().endsWith(".rar")) {
+                if (selectedFile.getName().endsWith(".zip")) {
+                    Archive.unzip(selectedFile.getAbsolutePath(), tempDirPath);
+                } else if (selectedFile.getName().endsWith(".rar")) {
+                    Archive.unrar(selectedFile.getAbsolutePath(), tempDirPath);
+                }
+
+                File[] extractedFiles = tempDir.listFiles();
+                if (extractedFiles != null && extractedFiles.length > 0) {
+                    File extractedFile = extractedFiles[0];
+                    expressions = (ArrayList<String>) Files.readAllLines(extractedFile.toPath());
+                }
+            } else if (selectedFile.getName().endsWith(".aes")) {
+                String decryptFilePath = tempDirPath + "/decrypted_" + selectedFile.getName().replace(".aes", ".txt");
+                Encryption.decrypt(decryptFilePath, selectedFile.getAbsolutePath(), key);
+                expressions = (ArrayList<String>) Files.readAllLines(Paths.get(decryptFilePath));
+            } else {
+                expressions = (ArrayList<String>) Files.readAllLines(selectedFile.toPath());
+            }
+
+            response.put("expressions", expressions);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("Ошибка работы с файлами: " + e.getMessage());
+            response.put("error", "Ошибка работы с файлами: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 
     public static class ExpressionRequest {
         private String inputFormat;
         private String outputFormat;
-        private String archiveFormat;
+        private String encryptionKey;
+        private String fileContent;
         private ArrayList<String> expressions;
-        private ArrayList<String> results;
 
         public String getInputFormat() {
             return inputFormat;
         }
+
         public void setInputFormat(String inputFormat) {
             this.inputFormat = inputFormat;
         }
@@ -187,29 +252,33 @@ public class DemoController {
         public String getOutputFormat() {
             return outputFormat;
         }
+
         public void setOutputFormat(String outputFormat) {
             this.outputFormat = outputFormat;
         }
 
-        public String getArchiveFormat() {
-            return archiveFormat;
+        public String getEncryptionKey() {
+            return encryptionKey;
         }
-        public void setArchiveFormat(String archiveFormat) {
-            this.archiveFormat = archiveFormat;
+
+        public void setEncryptionKey(String encryptionKey) {
+            this.encryptionKey = encryptionKey;
+        }
+
+        public String getFileContent() {
+            return fileContent;
+        }
+
+        public void setFileContent(String fileContent) {
+            this.fileContent = fileContent;
         }
 
         public ArrayList<String> getExpressions() {
             return expressions;
         }
+
         public void setExpressions(ArrayList<String> expressions) {
             this.expressions = expressions;
-        }
-
-        public ArrayList<String> getResults() {
-            return results;
-        }
-        public void setResults(ArrayList<String> results) {
-            this.results = results;
         }
     }
 }

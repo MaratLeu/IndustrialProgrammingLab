@@ -14,6 +14,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column; /* Вертикальное выравнивание */
       height: 100vh;
     }
     h1 {
@@ -31,6 +32,7 @@
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 20px; /* Отступ снизу для кнопки */
     }
     .section {
       flex: 1;
@@ -48,39 +50,59 @@
       font-weight: bold;
       color: #fff;
     }
-    input[type="text"], select, textarea {
-      width: calc(100% - 20px); /* Обеспечить одинаковую ширину */
-      padding: 10px;
+    input[type="text"], select, textarea, input[type="password"] {
+      width: calc(100% - 20px);
+      padding: 15px; /* Увеличенное заполнение для более удобного ввода */
       margin-bottom: 15px;
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 18px;
       background: rgba(255, 255, 255, 0.8);
       color: #333;
-      box-sizing: border-box; /* Учесть внутренние отступы и границы */
+      box-sizing: border-box;
     }
     textarea {
-      height: 100px; /* Уменьшено, чтобы не залазило на правую часть */
+      height: 100px;
     }
     button {
       background-color: #1e90ff;
       color: white;
-      padding: 12px 20px;
+      padding: 12px 24px; /* Увеличенное заполнение для кнопок */
       border: none;
       border-radius: 25px;
       cursor: pointer;
-      width: 100%;
-      font-size: 18px;
-      margin-bottom: 10px;
+      font-size: 18px; /* Увеличенный размер шрифта */
+      margin-bottom: 5px;
       transition: background-color 0.3s ease, transform 0.3s ease;
+      width: 100%; /* Ширина кнопок на 100% */
     }
     button:hover {
       background-color: #1c86ee;
       transform: scale(1.05);
     }
+    .calculate-button {
+      background-color: #ff6347; /* Цвет кнопки Calculate */
+      margin-top: 10px; /* Отступ сверху */
+    }
+    .choose-file-buttons {
+      display: flex;
+      align-items: center; /* Центрируем по вертикали */
+      margin-top: 10px;
+    }
+    .choose-file-buttons button {
+      flex: 1; /* Кнопка занимает 1 часть */
+    }
+    .file-label {
+      color: #fff;
+      margin-left: 10px; /* Отступ между кнопкой и меткой */
+      flex: 1; /* Метка занимает 1 часть */
+      text-align: left; /* Выравнивание текста по левому краю */
+    }
   </style>
 </head>
 <body>
+
+<h1>File Operations</h1>
 
 <div class="container">
   <div class="section">
@@ -93,11 +115,12 @@
       <option value="yaml">YAML</option>
       <option value="html">HTML</option>
       <option value="bin">BIN</option>
+      <option value="aes">AES</option>
     </select>
     <label for="inputTextArea">Enter expressions:</label>
     <textarea id="inputTextArea" placeholder="Enter expressions"></textarea>
     <label for="encryptionKeyInput">Encryption Key:</label>
-    <input type="text" id="encryptionKeyInput" placeholder="Enter encryption key">
+    <input type="password" id="encryptionKeyInput" placeholder="Enter encryption key">
     <label for="archiveFormatInput">Archive Format:</label>
     <select id="archiveFormatInput">
       <option value="zip">ZIP</option>
@@ -111,8 +134,13 @@
       <option value="encrypt_then_archive">Encrypt then Archive</option>
     </select>
     <button type="button" onclick="applyInputEngine()">Apply Input Engine</button>
-    <button type="button" onclick="readFromFile()">Read from File</button>
-    <button type="button" onclick="writeToFile()">Write to File</button>
+    <button type="button" onclick="readFromInputFile()">Read from File</button>
+    <button type="button" onclick="writeToInputFile()">Write to File</button>
+
+    <div class="choose-file-buttons">
+      <button type="button" onclick="chooseInputFile()">Choose Input File</button>
+      <p class="file-label" id="selectedInputFileLabel">No input file chosen</p>
+    </div>
   </div>
 
   <div class="section">
@@ -125,11 +153,12 @@
       <option value="yaml">YAML</option>
       <option value="html">HTML</option>
       <option value="bin">BIN</option>
+      <option value="aes">AES</option>
     </select>
     <label for="outputTextArea">Results for expressions:</label>
     <textarea id="outputTextArea" placeholder="Results for expressions" readonly></textarea>
     <label for="encryptionKeyOutput">Encryption Key:</label>
-    <input type="text" id="encryptionKeyOutput" placeholder="Enter encryption key">
+    <input type="password" id="encryptionKeyOutput" placeholder="Enter encryption key">
     <label for="archiveFormatOutput">Archive Format:</label>
     <select id="archiveFormatOutput">
       <option value="zip">ZIP</option>
@@ -143,26 +172,19 @@
       <option value="encrypt_then_archive">Encrypt then Archive</option>
     </select>
     <button type="button" onclick="applyOutputEngine()">Apply Output Engine</button>
-    <button type="button" onclick="readFromFile()">Read from File</button>
-    <button type="button" onclick="writeToFile()">Write to File</button>
+    <button type="button" onclick="readFromOutputFile()">Read from File</button>
+    <button type="button" onclick="writeToOutputFile()">Write to File</button>
+
+    <div class="choose-file-buttons">
+      <button type="button" onclick="chooseOutputFile()">Choose Output File</button>
+      <p class="file-label" id="selectedOutputFileLabel">No output file chosen</p>
+    </div>
   </div>
 </div>
 
-<script>
-  function calculate() {
-    const expressions = document.getElementById('inputTextArea').value.split('\n');
-    let results = '';
-    expressions.forEach(expression => {
-      try {
-        const result = eval(expression);
-        results += `${expression} = ${result}\n`;
-      } catch (e) {
-        results += `${expression} = Error\n`;
-      }
-    });
-    document.getElementById('outputTextArea').value = results;
-  }
+<button class="calculate-button" type="button" onclick="calculate()">Calculate</button>
 
+<script>
   function applyInputEngine() {
     const engine = document.getElementById('engineInput').value;
     switch(engine) {
@@ -201,44 +223,183 @@
 
   function archive() {
     alert('Archive operation selected');
-    // Implement archive logic here
   }
 
   function encrypt() {
     alert('Encrypt operation selected');
-    // Implement encrypt logic here
   }
 
   function archiveThenEncrypt() {
     alert('Archive then Encrypt operation selected');
-    // Implement archive then encrypt logic here
   }
 
-  function encrypt() {
-    alert('Encrypt operation selected');
-    // Implement encrypt logic here
-  }
-
-  function archiveThenEncrypt() {
-    alert('Archive then Encrypt operation selected');
-    // Implement archive then encrypt logic here
-   }
-
-   function encryptThenArchive() {
+  function encryptThenArchive() {
     alert('Encrypt then Archive operation selected');
-    // Implement encrypt then archive logic here
-   }
+  }
 
-   function writeToFile() {
+  function writeToInputFile() {
     alert('Write to File operation selected');
-    // Implement write to file logic here
-   }
+  }
 
-   function readFromFile() {
-    alert('Read from File operation selected');
-    // Implement read from file logic here
-   }
+  function writeToOutputFile() {
+    alert('Write to Output File operation selected');
+  }
+
+  function chooseInputFile() {
+    const selectedFormat = document.getElementById('inputFormat').value;
+    const inputFileElement = document.createElement('input');
+    inputFileElement.type = 'file';
+    inputFileElement.accept = `.${selectedFormat}, .zip, .rar`;
+
+    inputFileElement.onchange = function() {
+      inputFile = inputFileElement.files[0];
+      document.getElementById('selectedInputFileLabel').textContent = inputFile.name;
+    };
+
+    inputFileElement.click();
+  }
+
+  function chooseOutputFile() {
+    const selectedFormat = document.getElementById('outputFormat').value;
+    const outputFileElement = document.createElement('input');
+    outputFileElement.type = 'file';
+    outputFileElement.accept = `.${selectedFormat}, .zip, .rar`;
+
+    outputFileElement.onchange = function() {
+      outputFile = outputFileElement.files[0];
+      document.getElementById('selectedOutputFileLabel').textContent = outputFile.name;
+    }
+
+    outputFileElement.click();
+  }
+
+  function calculate() {
+    var expressions = document.getElementById('inputTextArea').value.trim();
+
+    if (!expressions) {
+      alert("Please enter expressions to calculate.");
+      return;
+    }
+
+    var payload = JSON.stringify({ expressions: expressions.split('\n') });
+
+    // Создаем и отправляем AJAX запрос на сервер
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/calculate_expressions");
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          var results = JSON.parse(xhr.responseText);
+          document.getElementById("outputTextArea").value = results.join('\n');
+        } catch (e) {
+          document.getElementById("outputTextArea").value = "Error parsing response.";
+        }
+      } else {
+        document.getElementById("outputTextArea").value = "Error in response.";
+      }
+    };
+
+    xhr.onerror = function () {
+      document.getElementById("outputTextArea").value = "Network error.";
+    };
+
+    xhr.send(payload);
+  }
+
+  function readFromInputFile() {
+    const inputFormat = document.getElementById('inputFormat').value;
+    const encryptionKey = document.getElementById('encryptionKeyInput').value;
+
+    if (!inputFile) {
+      alert("Пожалуйста, выберите файл.");
+      console.error("Файл не выбран.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const fileContent = event.target.result;
+      const payload = JSON.stringify({
+        inputFormat: inputFormat,
+        encryptionKey: encryptionKey,
+        fileContent: fileContent
+      });
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/readFromInputFile");
+      xhr.setRequestHeader("Content-Type", "application/json");
+
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+
+            if (data.error) {
+              document.getElementById('inputTextArea').value = "";
+            } else {
+              document.getElementById('inputTextArea').value = data.expressions.join("\n");
+            }
+          } catch (e) {
+            console.error("Ошибка парсинга:", e);
+          }
+        }
+      };
+
+      xhr.send(payload);
+    };
+
+    reader.readAsText(inputFile);
+  }
+
+
+  function readFromOutputFile() {
+    const outputFormat = document.getElementById('outputFormat').value;
+    const encryptionKey = document.getElementById('encryptionKeyOutput').value;
+
+    if (!outputFile) {
+      alert("Пожалуйста, выберите файл.");
+      console.error("Файл не выбран.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const fileContent = event.target.result;
+      const payload = JSON.stringify({
+        outputFormat: outputFormat,
+        encryptionKey: encryptionKey,
+        fileContent: fileContent
+      });
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/readFromOutputFile");
+      xhr.setRequestHeader("Content-Type", "application/json");
+
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+
+            if (data.error) {
+              document.getElementById('outputTextArea').value = "";
+            } else {
+              document.getElementById('outputTextArea').value = data.expressions.join("\n");
+            }
+          } catch (e) {
+            console.error("Ошибка парсинга:", e);
+          }
+        }
+      };
+
+      xhr.send(payload);
+    };
+
+    reader.readAsText(outputFile);
+  }
+
+
 </script>
-
 </body>
 </html>
