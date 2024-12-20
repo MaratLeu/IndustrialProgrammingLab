@@ -8,19 +8,21 @@ import org.springframework.web.bind.annotation.*;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class DemoController {
 
     @Autowired
     private CustomerRepository customerRepository;
-    
+
     @PostMapping("/add")
     public String addCustomer(@RequestParam String first, @RequestParam String last) {
         Customer customer = new Customer();
@@ -135,48 +137,52 @@ public class DemoController {
             String inputFormat = request.getInputFormat();
             String encryptionKey = request.getEncryptionKey();
             String fileContent = request.getFileContent();
+            String fileName = request.getFileName();
 
             SecretKey key = Encryption.getSecretKey(encryptionKey);
 
-            // Создаем временный файл из содержимого файла
-            String tempFilePath = System.getProperty("java.io.tmpdir") + "/input_temp" + System.currentTimeMillis() + "." + inputFormat;
-            Files.write(Paths.get(tempFilePath), fileContent.getBytes());
-            File selectedFile = new File(tempFilePath);
-
-            // Создаем временную директорию
-            String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
-            File tempDir = new File(tempDirPath);
-            if (!tempDir.exists()) {
-                tempDir.mkdirs();
+            // Создание временного файла из содержимого, если fileContent не null
+            File selectedFile;
+            if (fileContent != null) {
+                String tempFilePath = System.getProperty("java.io.tmpdir") + "/input_temp" + System.currentTimeMillis() + "." + inputFormat;
+                Files.write(Paths.get(tempFilePath), fileContent.getBytes());
+                selectedFile = new File(tempFilePath);
+            } else {
+                selectedFile = new File(fileName);
             }
 
             ArrayList<String> expressions = new ArrayList<>();
 
-            if (selectedFile.getName().endsWith(".zip") || selectedFile.getName().endsWith(".rar")) {
-                if (selectedFile.getName().endsWith(".zip")) {
-                    Archive.unzip(selectedFile.getAbsolutePath(), tempDirPath);
-                } else if (selectedFile.getName().endsWith(".rar")) {
-                    Archive.unrar(selectedFile.getAbsolutePath(), tempDirPath);
-                }
+            // Проверка, является ли файл архивом
+            if (selectedFile.getName().endsWith(".zip")) {
+                String outputDir = System.getProperty("java.io.tmpdir") + "/unzipped_" + System.currentTimeMillis();
+                Files.createDirectories(Paths.get(outputDir));
+                Archive.unzip(selectedFile.getAbsolutePath(), outputDir);
 
-                File[] extractedFiles = tempDir.listFiles();
-                if (extractedFiles != null && extractedFiles.length > 0) {
-                    File extractedFile = extractedFiles[0];
-                    expressions = (ArrayList<String>) Files.readAllLines(extractedFile.toPath());
-                }
+                List<String> extractedFiles = listFiles(outputDir);
+                response.put("files", extractedFiles);
+            } else if (selectedFile.getName().endsWith(".rar")) {
+                String outputDir = System.getProperty("java.io.tmpdir") + "/unrarred_" + System.currentTimeMillis();
+                Files.createDirectories(Paths.get(outputDir));
+                Archive.unrar(selectedFile.getAbsolutePath(), outputDir);
+
+                List<String> extractedFiles = listFiles(outputDir);
+                response.put("files", extractedFiles);
             } else if (selectedFile.getName().endsWith(".aes")) {
-                String decryptFilePath = tempDirPath + "/decrypted_" + selectedFile.getName().replace(".aes", ".txt");
+                String decryptFilePath = System.getProperty("java.io.tmpdir") + "/decrypted_" + selectedFile.getName().replace(".aes", ".txt");
                 Encryption.decrypt(decryptFilePath, selectedFile.getAbsolutePath(), key);
                 expressions = (ArrayList<String>) Files.readAllLines(Paths.get(decryptFilePath));
+                response.put("expressions", expressions);
             } else {
                 expressions = (ArrayList<String>) Files.readAllLines(selectedFile.toPath());
+                response.put("expressions", expressions);
             }
 
-            response.put("expressions", expressions);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.err.println("Ошибка работы с файлами: " + e.getMessage());
-            response.put("error", "Ошибка работы с файлами: " + e.getMessage());
+            System.err.println("File processing error: " + e.getMessage());
+            e.printStackTrace(); // Добавим распечатку стека вызовов для лучшего понимания ошибки
+            response.put("error", "File processing error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
@@ -188,57 +194,87 @@ public class DemoController {
             String outputFormat = request.getOutputFormat();
             String encryptionKey = request.getEncryptionKey();
             String fileContent = request.getFileContent();
+            String fileName = request.getFileName();
 
             SecretKey key = Encryption.getSecretKey(encryptionKey);
 
-            // Создаем временный файл из содержимого файла
-            String tempFilePath = System.getProperty("java.io.tmpdir") + "/input_temp" + System.currentTimeMillis() + "." + outputFormat;
-            Files.write(Paths.get(tempFilePath), fileContent.getBytes());
-            File selectedFile = new File(tempFilePath);
-
-            // Создаем временную директорию
-            String tempDirPath = System.getProperty("java.io.tmpdir") + "/archive_temp" + System.currentTimeMillis();
-            File tempDir = new File(tempDirPath);
-            if (!tempDir.exists()) {
-                tempDir.mkdirs();
+            // Создание временного файла из содержимого, если fileContent не null
+            File selectedFile;
+            if (fileContent != null) {
+                String tempFilePath = System.getProperty("java.io.tmpdir") + "/input_temp" + System.currentTimeMillis() + "." + outputFormat;
+                Files.write(Paths.get(tempFilePath), fileContent.getBytes());
+                selectedFile = new File(tempFilePath);
+            } else {
+                selectedFile = new File(fileName);
             }
 
-            ArrayList<String> expressions = new ArrayList<>();
+            ArrayList<String> expressions;
 
-            if (selectedFile.getName().endsWith(".zip") || selectedFile.getName().endsWith(".rar")) {
-                if (selectedFile.getName().endsWith(".zip")) {
-                    Archive.unzip(selectedFile.getAbsolutePath(), tempDirPath);
-                } else if (selectedFile.getName().endsWith(".rar")) {
-                    Archive.unrar(selectedFile.getAbsolutePath(), tempDirPath);
-                }
+            // Проверка, является ли файл архивом
+            if (selectedFile.getName().endsWith(".zip")) {
+                String outputDir = System.getProperty("java.io.tmpdir") + "/unzipped_" + System.currentTimeMillis();
+                Files.createDirectories(Paths.get(outputDir));
+                Archive.unzip(selectedFile.getAbsolutePath(), outputDir);
 
-                File[] extractedFiles = tempDir.listFiles();
-                if (extractedFiles != null && extractedFiles.length > 0) {
-                    File extractedFile = extractedFiles[0];
-                    expressions = (ArrayList<String>) Files.readAllLines(extractedFile.toPath());
-                }
+                List<String> extractedFiles = listFiles(outputDir);
+                response.put("files", extractedFiles);
+            } else if (selectedFile.getName().endsWith(".rar")) {
+                String outputDir = System.getProperty("java.io.tmpdir") + "/unrarred_" + System.currentTimeMillis();
+                Files.createDirectories(Paths.get(outputDir));
+                Archive.unrar(selectedFile.getAbsolutePath(), outputDir);
+
+                List<String> extractedFiles = listFiles(outputDir);
+                response.put("files", extractedFiles);
             } else if (selectedFile.getName().endsWith(".aes")) {
-                String decryptFilePath = tempDirPath + "/decrypted_" + selectedFile.getName().replace(".aes", ".txt");
+                String decryptFilePath = System.getProperty("java.io.tmpdir") + "/decrypted_" + selectedFile.getName().replace(".aes", ".txt");
                 Encryption.decrypt(decryptFilePath, selectedFile.getAbsolutePath(), key);
                 expressions = (ArrayList<String>) Files.readAllLines(Paths.get(decryptFilePath));
+                response.put("expressions", expressions);
             } else {
                 expressions = (ArrayList<String>) Files.readAllLines(selectedFile.toPath());
+                response.put("expressions", expressions);
             }
 
-            response.put("expressions", expressions);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.err.println("Ошибка работы с файлами: " + e.getMessage());
-            response.put("error", "Ошибка работы с файлами: " + e.getMessage());
+            System.err.println("File processing error: " + e.getMessage());
+            e.printStackTrace(); // Добавим распечатку стека вызовов для лучшего понимания ошибки
+            response.put("error", "File processing error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    private List<String> listFiles(String directory) throws IOException {
+        List<String> fileList = new ArrayList<>();
+        Files.walk(Paths.get(directory))
+                .filter(Files::isRegularFile)
+                .forEach(path -> fileList.add(path.toString()));
+        return fileList;
+    }
+
+    @PostMapping("/readFileContent")
+    public ResponseEntity<Map<String, Object>> readFileContent(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String filePath = request.get("filePath");
+            List<String> fileContent = Files.readAllLines(Paths.get(filePath));
+            response.put("fileContent", String.join("\n", fileContent));
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("File reading error: " + e.getMessage());
+            e.printStackTrace();
+            response.put("error", "File reading error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 
     public static class ExpressionRequest {
         private String inputFormat;
         private String outputFormat;
         private String encryptionKey;
         private String fileContent;
+        private String fileName;
         private ArrayList<String> expressions;
 
         public String getInputFormat() {
@@ -279,6 +315,14 @@ public class DemoController {
 
         public void setExpressions(ArrayList<String> expressions) {
             this.expressions = expressions;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
         }
     }
 }
