@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 public class DemoController {
@@ -24,13 +23,21 @@ public class DemoController {
     private CustomerRepository customerRepository;
 
     @PostMapping("/add")
-    public String addCustomer(@RequestParam String first, @RequestParam String last) {
+    public ResponseEntity<String> addCustomer(@RequestBody Map<String, String> payload) {
+        String first = payload.get("first");
+        String last = payload.get("last");
+
+        if (first == null || last == null) {
+            return ResponseEntity.badRequest().body("Required parameters 'first' and 'last' are not present");
+        }
+
         Customer customer = new Customer();
         customer.setFirstName(first);
         customer.setLastName(last);
         customerRepository.save(customer);
-        return "Added new customer to repo!";
+        return ResponseEntity.ok("Added new customer to repo!");
     }
+
 
     @GetMapping("/list")
     public Iterable<Customer> getCustomers() {

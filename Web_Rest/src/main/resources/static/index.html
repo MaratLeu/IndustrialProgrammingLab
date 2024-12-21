@@ -3,625 +3,95 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>File Operations</title>
+  <title>User Authentication</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: url('background.png') no-repeat center center fixed;
-      background-size: cover;
-      margin: 0;
-      padding: 20px;
+      background-color: #f4f4f4;
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-direction: column;
       height: 100vh;
-    }
-    h1 {
-      text-align: center;
-      color: #fff;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-      margin-bottom: 20px;
+      margin: 0;
     }
     .container {
-      display: flex;
-      justify-content: space-between;
-      max-width: 1200px;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      margin-bottom: 20px;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 400px;
     }
-    .section {
-      flex: 1;
-      margin: 0 10px;
-    }
-    .section h2 {
-      color: #fff;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-      margin-bottom: 10px;
-      text-align: center;
+    h2 {
+      margin-bottom: 25px;
     }
     label {
       display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-      color: #fff;
+      margin-bottom: 10px;
     }
-    input[type="text"], select, textarea, input[type="password"] {
-      width: calc(100% - 20px);
+    input, button {
+      width: calc(100% - 20px); /* Ширина теперь совпадает с кнопкой */
       padding: 15px;
-      margin-bottom: 15px;
+      margin-bottom: 25px;
       border: 1px solid #ccc;
-      border-radius: 8px;
+      border-radius: 4px;
       font-size: 18px;
-      background: rgba(255, 255, 255, 0.8);
-      color: #333;
-      box-sizing: border-box;
-    }
-    textarea {
-      height: 100px;
     }
     button {
-      background-color: #1e90ff;
-      color: white;
-      padding: 12px 24px;
+      background: #007bff;
       border: none;
-      border-radius: 25px;
-      cursor: pointer;
+      color: white;
       font-size: 18px;
-      margin-bottom: 5px;
-      transition: background-color 0.3s ease, transform 0.3s ease;
-      width: 100%;
+      cursor: pointer;
     }
     button:hover {
-      background-color: #1c86ee;
-      transform: scale(1.05);
+      background: #0056b3;
     }
-    .calculate-button {
-      background-color: #ff6347;
-      margin-top: 10px;
-    }
-    .choose-file-buttons {
-      display: flex;
-      align-items: center;
-      margin-top: 10px;
-    }
-    .choose-file-buttons button {
-      flex: 1;
-    }
-    .file-label {
-      color: #fff;
-      margin-left: 10px;
-      flex: 1;
-      text-align: left;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgb(0,0,0);
-      background-color: rgba(0,0,0,0.4);
-      padding-top: 60px;
-    }
-    .modal-content {
-      background-color: #fefefe;
-      margin: 5% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 80%;
-    }
-    #confirmSelection {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #confirmSelection:hover {
-      background-color: #45a049;
-    }
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-    }
-    .close:hover,
-    .close:focus {
-      color: black;
-      text-decoration: none;
-      cursor: pointer;
+    .error {
+      color: red;
+      margin-bottom: 20px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-
-<h1>File Operations</h1>
-
 <div class="container">
-  <div class="section">
-    <h2>Input Data</h2>
-    <label for="inputFormat">Input Format:</label>
-    <select id="inputFormat">
-      <option value="txt">TXT</option>
-      <option value="json">JSON</option>
-      <option value="xml">XML</option>
-      <option value="yaml">YAML</option>
-      <option value="html">HTML</option>
-      <option value="bin">BIN</option>
-      <option value="aes">AES</option>
-    </select>
-    <label for="inputTextArea">Enter expressions:</label>
-    <textarea id="inputTextArea" placeholder="Enter expressions"></textarea>
-    <label for="encryptionKeyInput">Encryption Key:</label>
-    <input type="password" id="encryptionKeyInput" placeholder="Enter encryption key">
-    <label for="archiveFormatInput">Archive Format:</label>
-    <select id="archiveFormatInput">
-      <option value="zip">ZIP</option>
-      <option value="rar">RAR</option>
-    </select>
-    <label for="engineInput">Engine:</label>
-    <select id="engineInput">
-      <option value="archive">Archive</option>
-      <option value="encrypt">Encrypt</option>
-      <option value="archive_then_encrypt">Archive then Encrypt</option>
-      <option value="encrypt_then_archive">Encrypt then Archive</option>
-    </select>
-    <button type="button" onclick="applyInputEngine()">Apply Input Engine</button>
-    <button type="button" onclick="readFromInputFile()">Read from File</button>
-    <button type="button" onclick="writeToInputFile()">Write to File</button>
-
-    <div class="choose-file-buttons">
-      <button type="button" onclick="chooseInputFile()">Choose Input File</button>
-      <p class="file-label" id="selectedInputFileLabel">No input file chosen</p>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Output Data</h2>
-    <label for="outputFormat">Output Format:</label>
-    <select id="outputFormat">
-      <option value="txt">TXT</option>
-      <option value="json">JSON</option>
-      <option value="xml">XML</option>
-      <option value="yaml">YAML</option>
-      <option value="html">HTML</option>
-      <option value="bin">BIN</option>
-      <option value="aes">AES</option>
-    </select>
-    <label for="outputTextArea">Results for expressions:</label>
-    <textarea id="outputTextArea" placeholder="Results for expressions" readonly></textarea>
-    <label for="encryptionKeyOutput">Encryption Key:</label>
-    <input type="password" id="encryptionKeyOutput" placeholder="Enter encryption key">
-    <label for="archiveFormatOutput">Archive Format:</label>
-    <select id="archiveFormatOutput">
-      <option value="zip">ZIP</option>
-      <option value="rar">RAR</option>
-    </select>
-    <label for="engineOutput">Engine:</label>
-    <select id="engineOutput">
-      <option value="archive">Archive</option>
-      <option value="encrypt">Encrypt</option>
-      <option value="archive_then_encrypt">Archive then Encrypt</option>
-      <option value="encrypt_then_archive">Encrypt then Archive</option>
-    </select>
-    <button type="button" onclick="applyOutputEngine()">Apply Output Engine</button>
-    <button type="button" onclick="readFromOutputFile()">Read from File</button>
-    <button type="button" onclick="writeToOutputFile()">Write to File</button>
-
-    <div class="choose-file-buttons">
-      <button type="button" onclick="chooseOutputFile()">Choose Output File</button>
-      <p class="file-label" id="selectedOutputFileLabel">No output file chosen</p>
-    </div>
-  </div>
+  <h2>Login</h2>
+  <form id="loginForm">
+    <div class="error" id="loginError"></div>
+    <label for="loginUsername">Username:</label>
+    <input type="text" id="loginUsername" name="username" required>
+    <label for="loginPassword">Password:</label>
+    <input type="password" id="loginPassword" name="password" required>
+    <button type="submit">Login</button>
+  </form>
 </div>
-
-<button class="calculate-button" type="button" onclick="calculate()">Calculate</button>
-
-<div id="modal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal()">&times;</span>
-    <div id="modalContent"></div>
-    <button id="confirmInputSelection" onclick="confirmFileSelection('inputTextArea')">Confirm Selection for Input</button>
-    <button id="confirmOutputSelection" onclick="confirmFileSelection('outputTextArea')">Confirm Selection for Output</button>
-  </div>
-</div>
-
 
 <script>
-  function applyInputEngine() {
-    const engine = document.getElementById('engineInput').value;
-    switch(engine) {
-      case 'archive':
-        archive();
-        break;
-      case 'encrypt':
-        encrypt();
-        break;
-      case 'archive_then_encrypt':
-        archiveThenEncrypt();
-        break;
-      case 'encrypt_then_archive':
-        encryptThenArchive();
-        break;
-    }
-  }
+  document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
 
-  function applyOutputEngine() {
-    const engine = document.getElementById('engineOutput').value;
-    switch(engine) {
-      case 'archive':
-        archive();
-        break;
-      case 'encrypt':
-        encrypt();
-        break;
-      case 'archive_then_encrypt':
-        archiveThenEncrypt();
-        break;
-      case 'encrypt_then_archive':
-        encryptThenArchive();
-        break;
-    }
-  }
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/add');
+    xhr.setRequestHeader('Content-Type', 'application/json');
 
-  function archive() {
-    alert('Archive operation selected');
-  }
-
-  function encrypt() {
-    alert('Encrypt operation selected');
-  }
-
-  function archiveThenEncrypt() {
-    alert('Archive then Encrypt operation selected');
-  }
-
-  function encryptThenArchive() {
-    alert('Encrypt then Archive operation selected');
-  }
-
-  function writeToInputFile() {
-    alert('Write to File operation selected');
-  }
-
-  function writeToOutputFile() {
-    alert('Write to Output File operation selected');
-  }
-
-  function chooseInputFile() {
-    const selectedFormat = document.getElementById('inputFormat').value;
-    const inputFileElement = document.createElement('input');
-    inputFileElement.type = 'file';
-    inputFileElement.accept = `.${selectedFormat}, .zip, .rar`;
-
-    inputFileElement.onchange = function() {
-      inputFile = inputFileElement.files[0];
-      document.getElementById('selectedInputFileLabel').textContent = inputFile.name;
-    };
-
-    inputFileElement.click();
-  }
-
-  function chooseOutputFile() {
-    const selectedFormat = document.getElementById('outputFormat').value;
-    const outputFileElement = document.createElement('input');
-    outputFileElement.type = 'file';
-    outputFileElement.accept = `.${selectedFormat}, .zip, .rar`;
-
-    outputFileElement.onchange = function() {
-      outputFile = outputFileElement.files[0];
-      document.getElementById('selectedOutputFileLabel').textContent = outputFile.name;
-    }
-
-    outputFileElement.click();
-  }
-
-  function calculate() {
-    var expressions = document.getElementById('inputTextArea').value.trim();
-
-    if (!expressions) {
-      alert("Please enter expressions to calculate.");
-      return;
-    }
-
-    var payload = JSON.stringify({ expressions: expressions.split('\n') });
-
-    // Создаем и отправляем AJAX запрос на сервер
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/calculate_expressions");
-    xhr.setRequestHeader("Content-Type", "application/json");
-
-    xhr.onload = function () {
+    xhr.onload = function() {
       if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          var results = JSON.parse(xhr.responseText);
-          document.getElementById("outputTextArea").value = results.join('\n');
-        } catch (e) {
-          document.getElementById("outputTextArea").value = "Error parsing response.";
-        }
+        window.location.href = 'authorization.html';
       } else {
-        document.getElementById("outputTextArea").value = "Error in response.";
+        const errorData = JSON.parse(xhr.responseText);
+        document.getElementById('loginError').textContent = `Login failed: ${errorData.message || 'Please check your credentials.'}`;
       }
     };
 
-    xhr.onerror = function () {
-      document.getElementById("outputTextArea").value = "Network error.";
+    xhr.onerror = function() {
+      document.getElementById('loginError').textContent = 'Login failed: Network error.';
     };
 
+    const payload = JSON.stringify({ first: username, last: password });
     xhr.send(payload);
-  }
-
-  let selectedFile = null;
-  let filePaths = {};
-
-  function readFromInputFile() {
-    const inputFormat = document.getElementById('inputFormat').value;
-    const encryptionKey = document.getElementById('encryptionKeyInput').value;
-
-    if (!inputFile) {
-      alert("Please select a file.");
-      console.error("File not selected.");
-      return;
-    }
-
-    const fileExtension = inputFile.name.split('.').pop().toLowerCase();
-
-    if (fileExtension === 'zip' || fileExtension === 'rar') {
-      const payload = JSON.stringify({
-        inputFormat: inputFormat,
-        encryptionKey: encryptionKey,
-        fileName: inputFile.name
-      });
-
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/readFromInputFile");
-      xhr.setRequestHeader("Content-Type", "application/json");
-
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-
-            if (data.error) {
-              console.error("Error receiving data: ", data.error);
-              alert(data.error);
-            } else if (data.files) {
-              showModalWithFiles(data.files, inputFormat);
-            } else {
-              document.getElementById('inputTextArea').value = data.expressions.join("\n");
-            }
-          } catch (e) {
-            console.error("Parsing error:", e);
-          }
-        } else {
-          console.error("Request error: ", xhr.status);
-        }
-      };
-
-      xhr.onerror = function() {
-        console.error("Request error");
-      };
-
-      xhr.send(payload);
-    } else {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const fileContent = event.target.result;
-        const payload = JSON.stringify({
-          inputFormat: inputFormat,
-          encryptionKey: encryptionKey,
-          fileContent: fileContent
-        });
-
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/readFromInputFile");
-        xhr.setRequestHeader("Content-Type", "application/json");
-
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const data = JSON.parse(xhr.responseText);
-
-              if (data.error) {
-                console.error("Error receiving data: ", data.error);
-                alert(data.error);
-              } else if (data.files) {
-                showModalWithFiles(data.files, inputFormat);
-              } else {
-                document.getElementById('inputTextArea').value = data.expressions.join("\n");
-              }
-            } catch (e) {
-              console.error("Parsing error:", e);
-            }
-          } else {
-            console.error("Request error: ", xhr.status);
-          }
-        };
-
-        xhr.onerror = function() {
-          console.error("Request error");
-        };
-
-        xhr.send(payload);
-      };
-
-      reader.onerror = function() {
-        console.error("File reading error");
-      };
-
-      reader.readAsText(inputFile);
-    }
-  }
-
-  function showModalWithFiles(files, inputFormat) {
-    filePaths = {};
-    const modalContent = document.getElementById('modalContent');
-    modalContent.innerHTML = files
-            .filter(file => file.endsWith(`.${inputFormat}`)) // Фильтрация файлов по формату
-            .map(file => {
-              const fileName = file.split('/').pop(); // Извлечение имени файла без пути
-              filePaths[fileName] = file; // Сохранение соответствия имени файла и его полного пути
-              return `<div><input type="radio" name="file" value="${fileName}"> ${fileName}</div>`;
-            })
-            .join('');
-    const modal = document.getElementById('modal');
-    modal.style.display = "block";
-  }
-
-  function confirmFileSelection(textAreaId) {
-    const selectedRadio = document.querySelector('input[name="file"]:checked');
-    if (selectedRadio) {
-      const selectedFileName = selectedRadio.value;
-      selectedFile = filePaths[selectedFileName];
-
-      const payload = JSON.stringify({
-        filePath: selectedFile
-      });
-
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/readFileContent");
-      xhr.setRequestHeader("Content-Type", "application/json");
-
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-            document.getElementById(textAreaId).value = data.fileContent;
-          } catch (e) {
-            console.error("Parsing error:", e);
-          }
-        } else {
-          console.error("Request error: ", xhr.status);
-        }
-      };
-
-      xhr.onerror = function() {
-        console.error("Request error");
-      };
-
-      xhr.send(payload);
-      closeModal();
-    } else {
-      alert("Please select a file.");
-    }
-  }
-
-  function closeModal() {
-    const modal = document.getElementById('modal');
-    modal.style.display = "none";
-  }
-
-
-  function readFromOutputFile() {
-    const outputFormat = document.getElementById('outputFormat').value;
-    const encryptionKey = document.getElementById('encryptionKeyOutput').value;
-
-    if (!outputFile) {
-      alert("Please select a file.");
-      console.error("File not selected.");
-      return;
-    }
-
-    const fileExtension = outputFile.name.split('.').pop().toLowerCase();
-
-    if (fileExtension === 'zip' || fileExtension === 'rar') {
-      const payload = JSON.stringify({
-        outputFormat: outputFormat,
-        encryptionKey: encryptionKey,
-        fileName: outputFile.name
-      });
-
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/readFromOutputFile");
-      xhr.setRequestHeader("Content-Type", "application/json");
-
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-
-            if (data.error) {
-              console.error("Error receiving data: ", data.error);
-              alert(data.error);
-            } else if (data.files) {
-              showModalWithFiles(data.files, outputFormat);
-            } else {
-              document.getElementById('outputTextArea').value = data.expressions.join("\n");
-            }
-          } catch (e) {
-            console.error("Parsing error:", e);
-          }
-        } else {
-          console.error("Request error: ", xhr.status);
-        }
-      };
-
-      xhr.onerror = function() {
-        console.error("Request error");
-      };
-
-      xhr.send(payload);
-    } else {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const fileContent = event.target.result;
-        const payload = JSON.stringify({
-          outputFormat: outputFormat,
-          encryptionKey: encryptionKey,
-          fileContent: fileContent
-        });
-
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/readFromOutputFile");
-        xhr.setRequestHeader("Content-Type", "application/json");
-
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const data = JSON.parse(xhr.responseText);
-
-              if (data.error) {
-                console.error("Error receiving data: ", data.error);
-                alert(data.error);
-              } else if (data.files) {
-                showModalWithFiles(data.files, outputFormat);
-              } else {
-                document.getElementById('outputTextArea').value = data.expressions.join("\n");
-              }
-            } catch (e) {
-              console.error("Parsing error:", e);
-            }
-          } else {
-            console.error("Request error: ", xhr.status);
-          }
-        };
-
-        xhr.onerror = function() {
-          console.error("Request error");
-        };
-
-        xhr.send(payload);
-      };
-
-      reader.onerror = function() {
-        console.error("File reading error");
-      };
-
-      reader.readAsText(outputFile);
-    }
-  }
-
+  });
 
 </script>
 </body>
