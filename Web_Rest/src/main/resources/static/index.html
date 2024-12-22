@@ -4,73 +4,41 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Authentication</title>
+  <link rel="stylesheet" href="CssCreativePassword.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      width: 400px;
-    }
-    h2 {
-      margin-bottom: 25px;
-    }
-    label {
-      display: block;
-      margin-bottom: 10px;
-    }
-    input, button {
-      width: calc(100% - 20px); /* Ширина теперь совпадает с кнопкой */
-      padding: 15px;
-      margin-bottom: 25px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 18px;
-    }
-    button {
-      background: #007bff;
-      border: none;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .error {
-      color: red;
-      margin-bottom: 20px;
-      text-align: center;
+    :root {
+      --bgColor: #f0f0f0;
+      --spacer: 1rem;
+      --inputColor: #1e90ff;
+      --eyeColor: #1e90ff;
+      --size: 1.5rem;
     }
   </style>
 </head>
 <body>
 <div class="container">
-  <h2>Login</h2>
   <form id="loginForm">
     <div class="error" id="loginError"></div>
-    <label for="loginUsername">Username:</label>
-    <input type="text" id="loginUsername" name="username" required>
-    <label for="loginPassword">Password:</label>
-    <input type="password" id="loginPassword" name="password" required>
-    <button type="submit">Login</button>
+    <div class="form-item">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required>
+    </div>
+    <div class="form-item password-container">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+      <div class="eye" onclick="togglePasswordVisibility()"></div>
+    </div>
+    <div class="form-item">
+      <button type="submit" id="submit">Login</button>
+    </div>
   </form>
 </div>
 
 <script>
   document.getElementById('loginForm').addEventListener('submit', function(event) {
     event.preventDefault();
-    const username = document.getElementById('loginUsername').value;
-    const password = document.getElementById('loginPassword').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/add');
@@ -93,6 +61,23 @@
     xhr.send(payload);
   });
 
+  function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('password');
+    const body = document.body;
+    const eye = document.querySelector('.eye');
+
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      body.classList.add('dark-mode');
+      eye.classList.add('active');
+      passwordInput.classList.add('highlighted');
+    } else {
+      passwordInput.type = 'password';
+      body.classList.remove('dark-mode');
+      eye.classList.remove('active');
+      passwordInput.classList.remove('highlighted');
+    }
+  }
 </script>
 </body>
 </html>
